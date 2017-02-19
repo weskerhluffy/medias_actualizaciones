@@ -568,6 +568,7 @@ class AVLTree():
 def mierdia_actualizacion_core(arbolin, numero, eliminar):
     mierdia = None
     mierdia_par = None
+    pos_par = 0
     num_cacas = arbolin.elements_count
     
     assert num_cacas == (arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0) , "el num de cacas %u, el num de ijos %u, los elems %s" % (num_cacas, ((arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0)), arbolin.as_list(1))
@@ -605,22 +606,31 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         
         logger_cagada.debug("el desfase de mierdia %u" % desfase)
         
-        if(desfase < 0):
+        if(desfase <= 0):
             recorrido = arbolin.recorrer_in_order_de_reversa_mami
+            pos_par = 1
         else:
             recorrido = arbolin.recorrer_in_order
+            pos_par = -1
             
         desfase = abs(desfase)
         
         mierdia = recorrido(desfase)
-        logger_cagada.debug("la mierdia es %u" % mierdia)
+        logger_cagada.debug("la mierdia es %u con desdase %d y pos par %d" % (mierdia, desfase, pos_par))
         if(not (num_cacas % 2)):
-            mierdia_par = recorrido(desfase - 1)
+            mierdia_par = recorrido(desfase + pos_par)
             logger_cagada.debug("la mierdia par es %u" % mierdia_par)
         
         if(mierdia_par):
             mierdia += mierdia_par
+        else:
+            mierdia <<= 1
+        logger_cagada.debug("la mierda doblada %d" % mierdia)
+        
+        if(mierdia % 2):
             mierdia /= 2
+        else:
+            mierdia >>= 1
             
         logger_cagada.debug("la mierdia definitiva es %u" % mierdia)
     
@@ -642,9 +652,32 @@ def mierdia_actualizacion_main():
         logger_cagada.debug("la operacoin %s el numero %u" % (operacion, numero))
         
         medio_ombre = mierdia_actualizacion_core(arbolin, numero, operacion == "r")
+        if(nivel_log == logging.DEBUG and arbolin.elements_count and medio_ombre):
+            numeros = sorted(arbolin.as_list(1))
+            logger_cagada.debug("los nums %s" % numeros)
+            
+            mitad = len(numeros) >> 1
+            mitad_par = None
+            
+            if(not (len(numeros) % 2)):
+                mitad_par = mitad - 1
+                logger_cagada.debug("la mitad par %u" % mitad_par)
+            
+            if(mitad_par is not None):
+                media_pendeja = numeros[mitad] + numeros[mitad_par]
+            else:
+                media_pendeja = numeros[mitad] << 1
+            
+            assert abs(media_pendeja - medio_ombre * 2) < 0.5 , "la media de debug %d, la de arbol %d" % (media_pendeja, medio_ombre * 2)
         
         logger_cagada.debug("la mierdia regresada %s" % medio_ombre)
-        print("%s" % (medio_ombre if medio_ombre else "Wrong!"))
+        cadenita = "Wrong!"
+        if(medio_ombre):
+            if(isinstance(medio_ombre, float)):
+                cadenita = "%.1f" % (medio_ombre)
+            else:
+                cadenita = "%d" % (medio_ombre)
+        print(cadenita)
         
 if __name__ == '__main__':
     FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
