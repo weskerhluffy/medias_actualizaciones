@@ -10,6 +10,16 @@ nivel_log = logging.ERROR
 nivel_log = logging.DEBUG
 logger_cagada = None
 
+def imprimir_lista_con_idx(lista):
+    if(not lista):
+        return ""
+    cagada = "(0)%d" % (lista[0])
+    for idx, num in enumerate(lista[1:], 1):
+        cagada += ", (%u)%d" % (idx, num)
+    
+    return cagada
+    
+
 class Node():
     def __init__(self, key):
         self.key = key
@@ -252,14 +262,15 @@ class AVLTree():
     
     def insert (self, key):
         new_node = Node (key)
+        nueva_insercion = True
         if not self.rootNode:
             self.rootNode = new_node
         else:
-#       if not self.find(key):
             self.add_as_child (self.rootNode, new_node)
         self.elements_count += 1
                 
-#        print("el num d ijos d root %u" % self.rootNode.num_hijos)
+#        print("el num d ijos d root %u" % self.rootNode.num_hijos
+        return nueva_insercion
       
     def find_biggest(self, start_node):
         node = start_node
@@ -424,12 +435,13 @@ class AVLTree():
                     self.rebalance(node)
                 node = node.parent
             
-        logger_cagada.debug("borrando cabron el nodo %u" % node.key)
-        node.key = None
-        node.leftChild = None
-        node.rightChild = None
-        node.parent = None
-        del node
+        logger_cagada.debug("borrando cabron el nodo %s" % node)
+        if(node):
+            node.key = None
+            node.leftChild = None
+            node.rightChild = None
+            node.parent = None
+            del node
         
         
     def swap_with_successor_and_remove (self, node):
@@ -519,14 +531,14 @@ class AVLTree():
         num_ant = nodo_act.key
         
         while(nodo_act):
-            if(nodo_act.key not in ya_imprimidos):
+            if(id(nodo_act) not in ya_imprimidos):
 #                print("you could be mine %u" % nodo_act.key)
-                ya_imprimidos.add(nodo_act.key)
+                ya_imprimidos.add(id(nodo_act))
                 num_recorridos += 1
                 if(num_recorridos == num_posiciones):
                     num_en_pos = nodo_act.key
                     break
-            if(nodo_act.leftChild and nodo_act.leftChild.key not in ya_imprimidos): 
+            if(nodo_act.leftChild and id(nodo_act.leftChild) not in ya_imprimidos): 
                 nodo_act = nodo_act.leftChild
                 while(nodo_act.rightChild):
                     nodo_act = nodo_act.rightChild
@@ -547,14 +559,14 @@ class AVLTree():
         num_ant = nodo_act.key
         
         while(nodo_act):
-            if(nodo_act.key not in ya_imprimidos):
+            if(id(nodo_act) not in ya_imprimidos):
 #                print("you could be mine %u" % nodo_act.key)
-                ya_imprimidos.add(nodo_act.key)
+                ya_imprimidos.add(id(nodo_act))
                 num_recorridos += 1
                 if(num_recorridos == num_posiciones):
                     num_en_pos = nodo_act.key
                     break
-            if(nodo_act.rightChild and nodo_act.rightChild.key not in ya_imprimidos): 
+            if(nodo_act.rightChild and id(nodo_act.rightChild) not in ya_imprimidos): 
                 nodo_act = nodo_act.rightChild
                 while(nodo_act.leftChild):
                     nodo_act = nodo_act.leftChild
@@ -569,22 +581,23 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
     mierdia = None
     mierdia_par = None
     pos_par = 0
-    num_cacas = arbolin.elements_count
+    num_cacas = num_cacas_orig = arbolin.elements_count
     
     assert num_cacas == (arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0) , "el num de cacas %u, el num de ijos %u, los elems %s" % (num_cacas, ((arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0)), arbolin.as_list(1))
     
     if(eliminar):
         logger_cagada.debug("eleiminando %u de %s" % (numero, arbolin.as_list(1)))
-        if(num_cacas):
+        if(num_cacas > 1):
             eliminada = arbolin.remove(numero)
             if(eliminada):
                 mierdia = eliminada
                 num_cacas -= 1
                 logger_cagada.debug("eleiminado %u definitivamente, aora kedan %u(%u) elems %s" % (numero, num_cacas, arbolin.elements_count, arbolin.as_list(1)))
     else:
-        arbolin.insert(numero)
+        inserto = arbolin.insert(numero)
         mierdia = numero
-        num_cacas += 1
+        if(inserto):
+            num_cacas += 1
         logger_cagada.debug("insertado %u, aora el num de cacas %u (%u)" % (numero, num_cacas, arbolin.elements_count))
     
     logger_cagada.debug("mierdia es %s" % mierdia)
@@ -593,14 +606,18 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         if(num_cacas == 1):
             return arbolin.rootNode.key
         if(num_cacas == 2):
-            return (arbolin.rootNode.key + (arbolin.rootNode.leftChild.key if arbolin.rootNode.leftChild else arbolin.rootNode.rightChild.key)) / 2
+            suma_caca = arbolin.rootNode.key + (arbolin.rootNode.leftChild.key if arbolin.rootNode.leftChild else arbolin.rootNode.rightChild.key)
+            if(suma_caca % 2):
+                return suma_caca / 2
+            else:
+                return  suma_caca >> 1
         
         pos_mierdia = num_cacas >> 1
         
-        logger_cagada.debug("la pos de mierdia %u" % pos_mierdia)
+        logger_cagada.debug("la pos de mierdia %u de un total de %u en elems %s" % (pos_mierdia, num_cacas, imprimir_lista_con_idx(arbolin.as_list(1))))
         
         pos_raiz = arbolin.rootNode.leftChild.num_hijos + 1 if arbolin.rootNode.leftChild else 0
-        logger_cagada.debug("la pos de raiz %u" % pos_raiz)
+        logger_cagada.debug("la pos de raiz %u, cuyo valor %d" % (pos_raiz, arbolin.rootNode.key))
     
         desfase = pos_mierdia - pos_raiz
         
@@ -619,7 +636,7 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         logger_cagada.debug("la mierdia es %u con desdase %d y pos par %d" % (mierdia, desfase, pos_par))
         if(not (num_cacas % 2)):
             mierdia_par = recorrido(desfase + pos_par)
-            logger_cagada.debug("la mierdia par es %u" % mierdia_par)
+            logger_cagada.debug("la mierdia par en desfase %u es %d" % (desfase + pos_par, mierdia_par))
         
         if(mierdia_par):
             mierdia += mierdia_par
@@ -634,14 +651,15 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
             
         logger_cagada.debug("la mierdia definitiva es %u" % mierdia)
     
-    if(not num_cacas):
+    if(not num_cacas and num_cacas == num_cacas_orig):
         mierdia = None
     
     return mierdia
-    
+
 def mierdia_actualizacion_main():
     lineas = list(sys.stdin)
     arbolin = AVLTree()
+    numeros_debug = []
     
     num_numeros = int(lineas[0])
     
@@ -652,23 +670,59 @@ def mierdia_actualizacion_main():
         logger_cagada.debug("la operacoin %s el numero %u" % (operacion, numero))
         
         medio_ombre = mierdia_actualizacion_core(arbolin, numero, operacion == "r")
-        if(nivel_log == logging.DEBUG and arbolin.elements_count and medio_ombre):
-            numeros = sorted(arbolin.as_list(1))
-            logger_cagada.debug("los nums %s" % numeros)
+#        if(nivel_log == logging.DEBUG and arbolin.elements_count and medio_ombre):
+        if(nivel_log == logging.DEBUG):
             
-            mitad = len(numeros) >> 1
-            mitad_par = None
-            
-            if(not (len(numeros) % 2)):
-                mitad_par = mitad - 1
-                logger_cagada.debug("la mitad par %u" % mitad_par)
-            
-            if(mitad_par is not None):
-                media_pendeja = numeros[mitad] + numeros[mitad_par]
+            estaba = True
+            if(operacion == "a"):
+                numeros_debug.append(numero)
             else:
-                media_pendeja = numeros[mitad] << 1
+                if(len(numeros_debug) > 1):
+                    try:
+                        numeros_debug.remove(numero)
+                    except:
+                        estaba = False
+                else:
+                    estaba = False
+                    
+            num_numeros_debug = len(numeros_debug)
+            assert arbolin.elements_count == num_numeros_debug
             
-            assert abs(media_pendeja - medio_ombre * 2) < 0.5 , "la media de debug %d, la de arbol %d" % (media_pendeja, medio_ombre * 2)
+            assert estaba == (medio_ombre is not None), "a cginga, estaba es %s, %s es no none %s" % (estaba, medio_ombre, (medio_ombre is not None))
+            
+            if(not num_numeros_debug):
+                logger_cagada.debug("no ai numeros no tiene caso")
+            else:
+                if(not estaba):
+                    logger_cagada.debug("no ai numeros no tiene caso")
+                else:
+                    
+                    numeros_debug.sort()
+                    
+                    logger_cagada.debug("los nums %s %u estaba %s" % (imprimir_lista_con_idx(numeros_debug), numero, estaba))
+                    numeros_arbolin = arbolin.as_list(1)
+                    
+                    for idx, num_debug in enumerate(numeros_debug):
+                        assert num_debug == numeros_arbolin[idx], "pero la puta madre, el num %d en pos de debug %u no coincide con el de arbol %d" % (num_debug, idx, numeros_arbolin[idx])
+                    
+                    mitad = num_numeros_debug >> 1
+                    mitad_par = None
+                    
+                    if(not (num_numeros_debug % 2)):
+                        mitad_par = mitad - 1
+                        logger_cagada.debug("la mitad par %u" % mitad_par)
+                    
+                    if(mitad_par is not None):
+                        media_pendeja = numeros_debug[mitad] + numeros_debug[mitad_par]
+                    else:
+                        media_pendeja = numeros_debug[mitad] << 1
+                    
+                    if(media_pendeja % 2):
+                        media_pendeja /= 2
+                    else:
+                        media_pendeja >>= 1
+                    
+                    assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
         
         logger_cagada.debug("la mierdia regresada %s" % medio_ombre)
         cadenita = "Wrong!"
@@ -686,3 +740,4 @@ if __name__ == '__main__':
     logger_cagada.setLevel(nivel_log)
 
     mierdia_actualizacion_main()
+    sys.exit(0)
