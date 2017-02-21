@@ -692,9 +692,11 @@ def mierdia_actualizacion_main():
             
             if(not num_numeros_debug):
                 logger_cagada.debug("no ai numeros no tiene caso")
+                pass
             else:
                 if(not estaba):
                     logger_cagada.debug("no ai numeros no tiene caso")
+                    pass
                 else:
                     
                     numeros_debug.sort()
