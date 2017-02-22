@@ -725,6 +725,14 @@ def mierdia_actualizacion_main():
                         media_pendeja >>= 1
                     
                     assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
+                    cadenita = "Wrong!"
+                    if(media_pendeja):
+                        if(isinstance(media_pendeja, float)):
+                            cadenita = "%.1f" % (media_pendeja)
+                        else:
+                            cadenita = "%d" % (media_pendeja)
+#                    print(cadenita)
+#                    continue
         
         logger_cagada.debug("la mierdia regresada %s" % medio_ombre)
         cadenita = "Wrong!"
