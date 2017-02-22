@@ -5,6 +5,7 @@ Created on 17/02/2017
 '''
 import logging
 import sys
+import ctypes
 
 nivel_log = logging.ERROR
 nivel_log = logging.DEBUG
@@ -589,7 +590,7 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         logger_cagada.debug("eleiminando %u de %s" % (numero, arbolin.as_list(1)))
         if(num_cacas > 1):
             eliminada = arbolin.remove(numero)
-            if(eliminada):
+            if(eliminada is not None):
                 mierdia = eliminada
                 num_cacas -= 1
                 logger_cagada.debug("eleiminado %u definitivamente, aora kedan %u(%u) elems %s" % (numero, num_cacas, arbolin.elements_count, arbolin.as_list(1)))
@@ -662,6 +663,7 @@ def mierdia_actualizacion_main():
     numeros_debug = []
     
     num_numeros = int(lineas[0])
+    logger_cagada.debug("el num de nums %u el num de lineas %u" % (num_numeros, len(lineas[1:])))
     
     for linea in lineas[1:]:
         operacion, numero_str = linea.strip().split(" ")
@@ -724,7 +726,7 @@ def mierdia_actualizacion_main():
                     else:
                         media_pendeja >>= 1
                     
-                    assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
+#                    assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
                     cadenita = "Wrong!"
                     if(media_pendeja):
                         if(isinstance(media_pendeja, float)):
@@ -736,11 +738,11 @@ def mierdia_actualizacion_main():
         
         logger_cagada.debug("la mierdia regresada %s" % medio_ombre)
         cadenita = "Wrong!"
-        if(medio_ombre):
+        if(medio_ombre is not None):
             if(isinstance(medio_ombre, float)):
                 cadenita = "%.1f" % (medio_ombre)
             else:
-                cadenita = "%d" % (medio_ombre)
+                cadenita = "%d" % (ctypes.c_int(medio_ombre)).value
         print(cadenita)
         
 if __name__ == '__main__':
