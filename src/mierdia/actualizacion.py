@@ -615,6 +615,8 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         
         pos_mierdia = num_cacas >> 1
         
+        pos_mierda_par_debug = pos_mierdia - 1
+        
         logger_cagada.debug("la pos de mierdia %u de un total de %u en elems %s" % (pos_mierdia, num_cacas, imprimir_lista_con_idx(arbolin.as_list(1))))
         
         pos_raiz = arbolin.rootNode.leftChild.num_hijos + 1 if arbolin.rootNode.leftChild else 0
@@ -638,6 +640,11 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         if(not (num_cacas % 2)):
             mierdia_par = recorrido(desfase + pos_par)
             logger_cagada.debug("la mierdia par en desfase %u es %d" % (desfase + pos_par, mierdia_par))
+            if(nivel_log==logging.DEBUG):
+                if(pos_par == 1):
+                    assert pos_mierda_par_debug == pos_raiz - (desfase + pos_par)
+                else:
+                    assert pos_mierda_par_debug == pos_raiz + (desfase + pos_par)
         
         if(mierdia_par):
             mierdia += mierdia_par
@@ -728,7 +735,7 @@ def mierdia_actualizacion_main():
                     
 #                    assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
                     cadenita = "Wrong!"
-                    if(media_pendeja):
+                    if(media_pendeja is not None):
                         if(isinstance(media_pendeja, float)):
                             cadenita = "%.1f" % (media_pendeja)
                         else:
