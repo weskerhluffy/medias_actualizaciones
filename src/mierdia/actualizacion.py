@@ -628,7 +628,7 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
             if(suma_caca % 2):
                 return suma_caca / 2
             else:
-                return  suma_caca >> 1
+                return suma_caca >> 1
         
         pos_mierdia = num_cacas >> 1
         
@@ -670,7 +670,7 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
                 
 #        print("ricolino %s mierdia %s" % (ricolino, mierdia))
         
-        if(mierdia_par):
+        if(mierdia_par is not None):
             mierdia += mierdia_par
         else:
             mierdia <<= 1
