@@ -759,8 +759,19 @@ def mierdia_actualizacion_main():
                         media_pendeja /= 2
                     else:
                         media_pendeja >>= 1
+                        
+                    medio_ombre = ricolino
+                    if(ricolino_par is not None):
+                        medio_ombre += ricolino_par
+                    else:
+                        medio_ombre <<= 1
+                        
+                    if(medio_ombre % 2):
+                        medio_ombre /= 2
+                    else:
+                        medio_ombre >>= 1
                     
-#                    assert media_pendeja == medio_ombre, "la media de debug %d, la de arbol %d" % (media_pendeja , medio_ombre)
+                    assert media_pendeja == medio_ombre, "la media de debug %s, la de arbol %s" % (media_pendeja , medio_ombre)
                     cadenita = "Wrong!"
                     if(media_pendeja is not None):
                         if(isinstance(media_pendeja, float)):
