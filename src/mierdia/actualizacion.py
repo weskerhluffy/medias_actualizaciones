@@ -578,6 +578,9 @@ class AVLTree():
         
         return num_en_pos
 
+ricolino = None
+ricolino_par = None
+
 def mierdia_actualizacion_core(arbolin, numero, eliminar):
     mierdia = None
     mierdia_par = None
@@ -585,6 +588,12 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
     num_cacas = num_cacas_orig = arbolin.elements_count
     
     assert num_cacas == (arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0) , "el num de cacas %u, el num de ijos %u, los elems %s" % (num_cacas, ((arbolin.rootNode.num_hijos + 1 if arbolin.rootNode else 0)), arbolin.as_list(1))
+    
+    global ricolino
+    global ricolino_par
+    
+    ricolino = None
+    ricolino_par = None
     
     if(eliminar):
         logger_cagada.debug("eleiminando %u de %s" % (numero, arbolin.as_list(1)))
@@ -605,8 +614,16 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
     if(mierdia is not None and num_cacas):
         logger_cagada.debug("de echo se izo algo")
         if(num_cacas == 1):
+            ricolino = arbolin.rootNode.key
             return arbolin.rootNode.key
         if(num_cacas == 2):
+            if(arbolin.rootNode.leftChild):
+                ricolino = arbolin.rootNode.key
+                ricolino_par = arbolin.rootNode.leftChild.key
+            else:
+                ricolino_par = arbolin.rootNode.key
+                ricolino = arbolin.rootNode.rightChild.key
+                
             suma_caca = arbolin.rootNode.key + (arbolin.rootNode.leftChild.key if arbolin.rootNode.leftChild else arbolin.rootNode.rightChild.key)
             if(suma_caca % 2):
                 return suma_caca / 2
@@ -636,15 +653,22 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
         desfase = abs(desfase)
         
         mierdia = recorrido(desfase)
-        logger_cagada.debug("la mierdia es %u con desdase %d y pos par %d" % (mierdia, desfase, pos_par))
+        logger_cagada.debug("la mierdia es %u ,pos raiz %u, pos medierda %d con desdase %d y pos par %d" % (mierdia, pos_raiz, pos_mierdia, desfase, pos_par))
+
+        ricolino = mierdia
+        logger_cagada.debug("ricolino %d" % ricolino)
         if(not (num_cacas % 2)):
             mierdia_par = recorrido(desfase + pos_par)
             logger_cagada.debug("la mierdia par en desfase %u es %d" % (desfase + pos_par, mierdia_par))
-            if(nivel_log==logging.DEBUG):
+            if(nivel_log == logging.DEBUG):
                 if(pos_par == 1):
+                    ricolino_par = mierdia_par
                     assert pos_mierda_par_debug == pos_raiz - (desfase + pos_par)
                 else:
+                    ricolino_par = mierdia_par
                     assert pos_mierda_par_debug == pos_raiz + (desfase + pos_par)
+                
+#        print("ricolino %s mierdia %s" % (ricolino, mierdia))
         
         if(mierdia_par):
             mierdia += mierdia_par
@@ -717,11 +741,14 @@ def mierdia_actualizacion_main():
                         assert num_debug == numeros_arbolin[idx], "pero la puta madre, el num %d en pos de debug %u no coincide con el de arbol %d" % (num_debug, idx, numeros_arbolin[idx])
                     
                     mitad = num_numeros_debug >> 1
+                    
+                    assert numeros_debug[mitad] == ricolino, "mitad debug %d(%u), ricolino %d, ricolono par %d" % (numeros_debug[mitad], mitad, ricolino, ricolino_par)
                     mitad_par = None
                     
                     if(not (num_numeros_debug % 2)):
                         mitad_par = mitad - 1
                         logger_cagada.debug("la mitad par %u" % mitad_par)
+                        assert numeros_debug[mitad_par] == ricolino_par
                     
                     if(mitad_par is not None):
                         media_pendeja = numeros_debug[mitad] + numeros_debug[mitad_par]
