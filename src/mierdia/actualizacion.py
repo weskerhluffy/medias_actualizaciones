@@ -683,8 +683,8 @@ def mierdia_actualizacion_core(arbolin, numero, eliminar):
             
         logger_cagada.debug("la mierdia definitiva es %u" % mierdia)
     
-    if(not num_cacas and num_cacas == num_cacas_orig):
-        mierdia = None
+#    if(not num_cacas or num_cacas == num_cacas_orig):
+#        mierdia = None
     
     return mierdia
 
