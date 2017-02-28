@@ -96,6 +96,7 @@ struct avl_tree_node_s {
 	natural num_decendientes;
 	natural indice_en_arreglo;
 	natural ocurrencias;
+	tipo_dato pasajero_oscuro;
 	struct avl_tree_node_s *left;
 	struct avl_tree_node_s *right;
 	struct avl_tree_node_s *padre;
@@ -874,7 +875,7 @@ static inline avl_tree_node_t* avl_tree_siguiente_nodo_inorder(
 }
 
 static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
-		avl_tree_node_t *root, tipo_dato key, bool ignora_conteo) {
+		avl_tree_node_t *root, tipo_dato key, bool ignora_conteo, tipo_dato pasajero_oscuro) {
 
 	if (root == NULL) {
 		return root;
@@ -882,12 +883,12 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 
 	if (key < root->llave) {
 		root->left = avl_tree_nodo_borrar(arbolini, root->left, key,
-				ignora_conteo);
+				ignora_conteo, pasajero_oscuro);
 		assert_timeout(!root->left || root->left->padre == root);
 	} else {
 		if (key > root->llave) {
 			root->right = avl_tree_nodo_borrar(arbolini, root->right, key,
-					ignora_conteo);
+					ignora_conteo, pasajero_oscuro);
 			assert_timeout(!root->right || root->right->padre == root);
 		} else {
 			if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
@@ -935,7 +936,7 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 					root->ocurrencias = temp->ocurrencias;
 
 					root->right = avl_tree_nodo_borrar(arbolini, root->right,
-							temp->llave, verdadero);
+							temp->llave, verdadero, temp->pasajero_oscuro);
 				}
 			} else {
 				root->ocurrencias--;
@@ -1159,8 +1160,15 @@ static inline int caca_comun_lee_matrix_long_stdin(tipo_dato *matrix,
 	return 0;
 }
 
-static inline tipo_dato media_mierda(avl_tree_t *arbolin,int numerin,natural idx){
+#define MEDIA_MIERDA_ALTURA(llave) ((natural)((llave)>>32))
+#define MEDIA_MIERDA_IDX(llave) ((natural)(llave))
 
+static inline tipo_dato media_mierda(avl_tree_t *arbolin,int numerin,natural idx, bool anadir){
+	tipo_dato llave_nueva=0;
+
+	llave_nueva=((tipo_dato)numerin)<<32;
+	llave_nueva|=idx;
+	caca_log_debug("la llave nueva %lu", num_estrellas);
 }
 
 void media_mierda_main() {
@@ -1193,15 +1201,17 @@ void media_mierda_main() {
 		caca_log_debug("la cadenita leida %s", buffer);
 		sscanf(buffer, "%c %d", &ope, &num_actual);
 
-		caca_log_debug("la op %c, el num %d", ope, num_actual)
+		caca_log_debug("la op %c, el num %d", ope, num_actual);
 
-		assert_timeout(ope == 'a' || ope == 'c');
+		assert_timeout(ope == 'a' || ope == 'r');
 
+/*
 		if (ope == 'a') {
 			avl_tree_insert(arbolin, estrella_negra);
 		} else {
 
 		}
+		*/
 	}
 
 	avl_tree_destroy(arbolin);
