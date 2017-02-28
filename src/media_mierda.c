@@ -365,7 +365,8 @@ int avl_tree_balance_factor(avl_tree_node_t *node) {
 }
 
 static inline avl_tree_node_t *avl_tree_balance_node_insertar(
-		const avl_tree_node_t *node, const tipo_dato llave_nueva) {
+		const avl_tree_node_t *node, const tipo_dato llave_nueva,
+		const tipo_dato pasajero_oscuro) {
 	avl_tree_node_t *newroot = NULL;
 	avl_tree_node_t *nodo_actual = NULL;
 
@@ -381,11 +382,18 @@ static inline avl_tree_node_t *avl_tree_balance_node_insertar(
 
 		if (bf >= 2) {
 			/* Left Heavy */
-
 			if (llave_nueva > nodo_actual->left->llave) {
 				newroot = avl_tree_rotate_leftright(nodo_actual);
 			} else {
-				newroot = avl_tree_rotate_leftleft(nodo_actual);
+				if (llave_nueva < nodo_actual->left->llave) {
+					newroot = avl_tree_rotate_leftleft(nodo_actual);
+				} else {
+					if (pasajero_oscuro > nodo_actual->left->pasajero_oscuro) {
+						newroot = avl_tree_rotate_leftright(nodo_actual);
+					} else {
+						newroot = avl_tree_rotate_leftleft(nodo_actual);
+					}
+				}
 			}
 
 		} else if (bf <= -2) {
@@ -393,12 +401,19 @@ static inline avl_tree_node_t *avl_tree_balance_node_insertar(
 			if (llave_nueva < nodo_actual->right->llave) {
 				newroot = avl_tree_rotate_rightleft(nodo_actual);
 			} else {
-				newroot = avl_tree_rotate_rightright(nodo_actual);
+				if (llave_nueva > nodo_actual->right->llave) {
+					newroot = avl_tree_rotate_rightright(nodo_actual);
+				} else {
+					if (pasajero_oscuro < nodo_actual->right->pasajero_oscuro) {
+						newroot = avl_tree_rotate_rightleft(nodo_actual);
+					} else {
+						newroot = avl_tree_rotate_rightright(nodo_actual);
+					}
+				}
 			}
 
 		} else {
 			/* This node is balanced -- no change. */
-
 			newroot = nodo_actual;
 			avl_tree_node_actualizar_altura(nodo_actual);
 		}
@@ -411,7 +426,15 @@ static inline avl_tree_node_t *avl_tree_balance_node_insertar(
 				if (llave_nueva > padre->llave) {
 					rama_padre = &padre->right;
 				} else {
-					assert_timeout(0);
+					if (pasajero_oscuro < padre->pasajero_oscuro) {
+						rama_padre = &padre->left;
+					} else {
+						if (pasajero_oscuro > padre->pasajero_oscuro) {
+							rama_padre = &padre->right;
+						} else {
+							assert_timeout(0);
+						}
+					}
 				}
 			}
 			*rama_padre = newroot;
@@ -425,11 +448,12 @@ static inline avl_tree_node_t *avl_tree_balance_node_insertar(
 
 /* Balance a given tree */
 void avl_tree_balance_insertar(avl_tree_t *tree, avl_tree_node_t *nodo,
-		tipo_dato llave_nueva) {
+		tipo_dato llave_nueva, tipo_dato pasajero_oscuro) {
 
 	avl_tree_node_t *newroot = NULL;
 
-	newroot = avl_tree_balance_node_insertar(nodo, llave_nueva);
+	newroot = avl_tree_balance_node_insertar(nodo, llave_nueva,
+			pasajero_oscuro);
 
 	if (newroot != tree->root) {
 		tree->root = newroot;
@@ -437,7 +461,8 @@ void avl_tree_balance_insertar(avl_tree_t *tree, avl_tree_node_t *nodo,
 }
 
 /* Insert a new node. */
-void avl_tree_insert(avl_tree_t *tree, tipo_dato value) {
+void avl_tree_insert(avl_tree_t *tree, tipo_dato value,
+		tipo_dato pasajero_oscuro) {
 	avl_tree_node_t *node = NULL;
 	avl_tree_node_t *next = NULL;
 	avl_tree_node_t *last = NULL;
@@ -446,6 +471,7 @@ void avl_tree_insert(avl_tree_t *tree, tipo_dato value) {
 	if (tree->root == NULL) {
 		node = avl_tree_create_node(tree);
 		node->llave = value;
+		node->pasajero_oscuro = pasajero_oscuro;
 
 		tree->root = node;
 
@@ -465,25 +491,34 @@ void avl_tree_insert(avl_tree_t *tree, tipo_dato value) {
 					next = next->right;
 				} else {
 					if (value == next->llave) {
-						avl_tree_node_t *ancestro_actal = NULL;
-						/* Have we already inserted this node? */
-						next->ocurrencias++;
-						caca_log_debug(
-								"llave ya existe, aumentando contador a carajo %u\n",
-								next->ocurrencias);
 
-						ancestro_actal = next;
-						while (ancestro_actal) {
-							caca_log_debug("bajando decendientes de %llu",
-									ancestro_actal->llave);
-							ancestro_actal->num_decendientes--;
-							ancestro_actal = ancestro_actal->padre;
+						if (pasajero_oscuro < next->pasajero_oscuro) {
+							next = next->left;
+						} else {
+							if (pasajero_oscuro > next->pasajero_oscuro) {
+								next = next->right;
+							} else {
+								avl_tree_node_t *ancestro_actal = NULL;
+								/* Have we already inserted this node? */
+								next->ocurrencias++;
+								caca_log_debug(
+										"llave ya existe, aumentando contador a carajo %u\n",
+										next->ocurrencias);
+
+								ancestro_actal = next;
+								while (ancestro_actal) {
+									caca_log_debug(
+											"bajando decendientes de %llu",
+											ancestro_actal->llave);
+									ancestro_actal->num_decendientes--;
+									ancestro_actal = ancestro_actal->padre;
+								}
+								return;
+							}
 						}
-						return;
 					} else {
 						caca_log_debug("verga, no es maior menor ni igual\n");
 						assert_timeout(0);
-
 					}
 				}
 			}
@@ -491,12 +526,20 @@ void avl_tree_insert(avl_tree_t *tree, tipo_dato value) {
 
 		node = avl_tree_create_node(tree);
 		node->llave = value;
+		node->pasajero_oscuro = pasajero_oscuro;
 
 		if (value < last->llave) {
 			last->left = node;
-		}
-		if (value > last->llave) {
-			last->right = node;
+		} else {
+			if (value > last->llave) {
+				last->right = node;
+			} else {
+				if (pasajero_oscuro < last->pasajero_oscuro) {
+					last->left = node;
+				} else {
+					last->right = node;
+				}
+			}
 		}
 
 		node->padre = last;
@@ -504,69 +547,36 @@ void avl_tree_insert(avl_tree_t *tree, tipo_dato value) {
 	}
 	node->ocurrencias = 1;
 
-	avl_tree_balance_insertar(tree, node, value);
+	avl_tree_balance_insertar(tree, node, value, pasajero_oscuro);
 }
 
 /* Find the node containing a given value */
-avl_tree_node_t *avl_tree_find(avl_tree_t *tree, tipo_dato value) {
+avl_tree_node_t *avl_tree_find(avl_tree_t *tree, tipo_dato value,
+		tipo_dato pasajero_oscuro) {
 	avl_tree_node_t *current = tree->root;
 
-	while (current && current->llave != value) {
-		if (value > current->llave)
-			current = current->right;
-		else
-			current = current->left;
-	}
-
-	return current ? current->llave == value ? current : NULL :NULL;
-}
-
-avl_tree_node_t *avl_tree_find_descartando(avl_tree_node_t *nodo_raiz,
-		avl_tree_node_t **primer_nodo_mayor_o_igual, tipo_dato value,
-		tipo_dato tope, bool *tope_topado) {
-	avl_tree_node_t *current = NULL;
-	avl_tree_node_t *primer_nodo_mayor = NULL;
-
-	current = nodo_raiz;
-	assert_timeout(!tope_topado || tope || !nodo_raiz->llave);
-
-	assert_timeout(!tope_topado || tope >= value);
-
-	if (tope_topado) {
-		*tope_topado = falso;
-	}
-
-	do {
-		if (tope_topado) {
-			if ((current->llave > tope && !current->left)
-					|| current->llave == tope) {
-				*tope_topado = verdadero;
-				break;
-			}
-		}
+	while (current) {
 		if (value > current->llave) {
-			if (!primer_nodo_mayor) {
-				primer_nodo_mayor = current;
-			}
 			current = current->right;
 		} else {
 			if (value < current->llave) {
 				current = current->left;
 			} else {
-				break;
+				if (pasajero_oscuro != AVL_TREE_VALOR_INVALIDO) {
+					if (pasajero_oscuro > current->pasajero_oscuro) {
+						current = current->right;
+					} else {
+						if (pasajero_oscuro < current->pasajero_oscuro) {
+							current = current->left;
+						} else {
+							break;
+						}
+					}
+				} else {
+					break;
+				}
 			}
 		}
-	} while (current && current->llave != value);
-
-	*primer_nodo_mayor_o_igual = primer_nodo_mayor;
-	if (!*primer_nodo_mayor_o_igual) {
-		if (current && (current->llave == value)) {
-			*primer_nodo_mayor_o_igual = current;
-		}
-	}
-
-	if (tope_topado && current && current->llave >= tope && value >= tope) {
-		*tope_topado = verdadero;
 	}
 
 	return current ? current->llave == value ? current : NULL :NULL;
@@ -610,6 +620,14 @@ static inline bool avl_tree_iterador_hay_siguiente(avl_tree_iterator_t *iter) {
 					== 2);
 }
 
+static inline bool avl_tree_iterador_hay_anterior(avl_tree_iterator_t *iter) {
+	bool resultado = falso;
+	resultado =
+			iter->nodo_actual->left
+					&& !iter->contador_visitas[iter->nodo_actual->left->indice_en_arreglo];
+	return resultado;
+}
+
 static inline avl_tree_node_t* avl_tree_iterador_siguiente(
 		avl_tree_iterator_t *iter) {
 	int contador_actual = 0;
@@ -622,6 +640,73 @@ static inline avl_tree_node_t* avl_tree_iterador_siguiente(
 	}
 
 	if (!avl_tree_iterador_hay_siguiente(iter)) {
+		return NULL;
+	}
+
+	contador_actual =
+			iter->contador_visitas[iter->nodo_actual->indice_en_arreglo];
+
+	iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
+
+	switch (contador_actual) {
+	case 0:
+	case 1:
+		if (!contador_actual) {
+			nodo_actual = iter->nodo_actual->left;
+			if (!nodo_actual) {
+				return iter->nodo_actual;
+			}
+		} else {
+			nodo_actual = iter->nodo_actual->right;
+			if (!nodo_actual) {
+				nodo_actual = iter->nodo_actual->padre;
+				while (nodo_actual
+						&& iter->contador_visitas[nodo_actual->indice_en_arreglo]
+								== 2) {
+					last_of_us = nodo_actual;
+					nodo_actual = nodo_actual->padre;
+				}
+				if (!nodo_actual) {
+					if (last_of_us) {
+						iter->nodo_actual = last_of_us;
+					}
+				} else {
+					iter->nodo_actual = nodo_actual;
+				}
+				return nodo_actual;
+			}
+		}
+
+		while (nodo_actual) {
+			last_of_us = nodo_actual;
+			iter->contador_visitas[nodo_actual->indice_en_arreglo]++;
+			nodo_actual = last_of_us->left;
+		}
+
+		nodo = iter->nodo_actual = last_of_us;
+
+		break;
+	default:
+		assert_timeout(0)
+		;
+		break;
+	}
+
+	return nodo;
+}
+
+static inline avl_tree_node_t* avl_tree_iterador_anterior(
+		avl_tree_iterator_t *iter) {
+	int contador_actual = 0;
+	avl_tree_node_t *nodo = NULL;
+	avl_tree_node_t *last_of_us = NULL;
+	avl_tree_node_t *nodo_actual = NULL;
+
+	if (!iter->nodo_actual) {
+		nodo_actual = iter->nodo_actual = iter->arbolin->root;
+	}
+
+	if (!avl_tree_iterador_hay_anterior(iter)) {
 		return NULL;
 	}
 
@@ -875,7 +960,8 @@ static inline avl_tree_node_t* avl_tree_siguiente_nodo_inorder(
 }
 
 static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
-		avl_tree_node_t *root, tipo_dato key, bool ignora_conteo, tipo_dato pasajero_oscuro) {
+		avl_tree_node_t *root, tipo_dato key, bool ignora_conteo,
+		tipo_dato pasajero_oscuro) {
 
 	if (root == NULL) {
 		return root;
@@ -891,56 +977,133 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 					ignora_conteo, pasajero_oscuro);
 			assert_timeout(!root->right || root->right->padre == root);
 		} else {
-			if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
-				if (root->left == NULL || root->right == NULL) {
-					avl_tree_node_t *temp =
-							root->left ? root->left : root->right;
+			if (pasajero_oscuro == AVL_TREE_VALOR_INVALIDO) {
+				if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
+					if (root->left == NULL || root->right == NULL) {
+						avl_tree_node_t *temp =
+								root->left ? root->left : root->right;
 
-					if (temp == NULL) {
-						temp = root;
-						root = NULL;
+						if (temp == NULL) {
+							temp = root;
+							root = NULL;
+						} else {
+							natural idx_en_arreglo = 0;
+							avl_tree_node_t *padre = NULL;
+
+							padre = root->padre;
+							idx_en_arreglo = root->indice_en_arreglo;
+							*root = *temp;
+							root->padre = padre;
+							root->indice_en_arreglo = idx_en_arreglo;
+							if (root->left) {
+								root->left->padre = root;
+							}
+							if (root->right) {
+								root->right->padre = root;
+							}
+						}
+
+						assert_timeout(
+								arbolini->ultimo_idx_anadido
+										- arbolini->siguiente_idx_para_usar
+										< arbolini->max_nodos);
+						arbolini->nodos_libres_idx[arbolini->ultimo_idx_anadido++
+								% arbolini->max_nodos] =
+								temp->indice_en_arreglo;
+						memset(temp, 0, sizeof(avl_tree_node_t));
+						temp->llave = AVL_TREE_VALOR_INVALIDO;
+						arbolini->nodos_realmente_en_arbol--;
+						caca_log_debug(
+								"disminuiendo nodos realmente en arbol a %u",
+								arbolini->nodos_realmente_en_arbol);
+
 					} else {
-						natural idx_en_arreglo = 0;
-						avl_tree_node_t *padre = NULL;
+						avl_tree_node_t *temp = avl_tree_siguiente_nodo_inorder(
+								root->right);
 
-						padre = root->padre;
-						idx_en_arreglo = root->indice_en_arreglo;
-						*root = *temp;
-						root->padre = padre;
-						root->indice_en_arreglo = idx_en_arreglo;
-						if (root->left) {
-							root->left->padre = root;
-						}
-						if (root->right) {
-							root->right->padre = root;
-						}
+						root->llave = temp->llave;
+						root->ocurrencias = temp->ocurrencias;
+
+						root->right = avl_tree_nodo_borrar(arbolini,
+								root->right, temp->llave, verdadero,
+								temp->pasajero_oscuro);
 					}
-
-					assert_timeout(
-							arbolini->ultimo_idx_anadido
-									- arbolini->siguiente_idx_para_usar
-									< arbolini->max_nodos);
-					arbolini->nodos_libres_idx[arbolini->ultimo_idx_anadido++
-							% arbolini->max_nodos] = temp->indice_en_arreglo;
-					memset(temp, 0, sizeof(avl_tree_node_t));
-					temp->llave = AVL_TREE_VALOR_INVALIDO;
-					arbolini->nodos_realmente_en_arbol--;
-					caca_log_debug("disminuiendo nodos realmente en arbol a %u",
-							arbolini->nodos_realmente_en_arbol);
-
 				} else {
-					avl_tree_node_t *temp = avl_tree_siguiente_nodo_inorder(
-							root->right);
-
-					root->llave = temp->llave;
-					root->ocurrencias = temp->ocurrencias;
-
-					root->right = avl_tree_nodo_borrar(arbolini, root->right,
-							temp->llave, verdadero, temp->pasajero_oscuro);
+					root->ocurrencias--;
+					return root;
 				}
 			} else {
-				root->ocurrencias--;
-				return root;
+				if (pasajero_oscuro < root->pasajero_oscuro) {
+					root->left = avl_tree_nodo_borrar(arbolini, root->left, key,
+							ignora_conteo, pasajero_oscuro);
+					assert_timeout(!root->left || root->left->padre == root);
+				} else {
+					if (pasajero_oscuro > root->pasajero_oscuro) {
+						root->right = avl_tree_nodo_borrar(arbolini,
+								root->right, key, ignora_conteo,
+								pasajero_oscuro);
+						assert_timeout(
+								!root->right || root->right->padre == root);
+					} else {
+
+						if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
+							if (root->left == NULL || root->right == NULL) {
+								avl_tree_node_t *temp =
+										root->left ? root->left : root->right;
+
+								if (temp == NULL) {
+									temp = root;
+									root = NULL;
+								} else {
+									natural idx_en_arreglo = 0;
+									avl_tree_node_t *padre = NULL;
+
+									padre = root->padre;
+									idx_en_arreglo = root->indice_en_arreglo;
+									*root = *temp;
+									root->padre = padre;
+									root->indice_en_arreglo = idx_en_arreglo;
+									if (root->left) {
+										root->left->padre = root;
+									}
+									if (root->right) {
+										root->right->padre = root;
+									}
+								}
+
+								assert_timeout(
+										arbolini->ultimo_idx_anadido
+												- arbolini->siguiente_idx_para_usar
+												< arbolini->max_nodos);
+								arbolini->nodos_libres_idx[arbolini->ultimo_idx_anadido++
+										% arbolini->max_nodos] =
+										temp->indice_en_arreglo;
+								memset(temp, 0, sizeof(avl_tree_node_t));
+								temp->llave = AVL_TREE_VALOR_INVALIDO;
+								arbolini->nodos_realmente_en_arbol--;
+								caca_log_debug(
+										"disminuiendo nodos realmente en arbol a %u",
+										arbolini->nodos_realmente_en_arbol);
+
+							} else {
+								avl_tree_node_t *temp =
+										avl_tree_siguiente_nodo_inorder(
+												root->right);
+
+								root->llave = temp->llave;
+								root->ocurrencias = temp->ocurrencias;
+
+								root->right = avl_tree_nodo_borrar(arbolini,
+										root->right, temp->llave, verdadero,
+										temp->pasajero_oscuro);
+							}
+
+						} else {
+							root->ocurrencias--;
+							return root;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -976,11 +1139,13 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 
 	avl_tree_node_t *newroot = NULL;
+	caca_log_debug("borrando valor %d", value);
 
 	if (!tree->root) {
 		return;
 	}
-	newroot = avl_tree_nodo_borrar(tree, tree->root, value, falso);
+	newroot = avl_tree_nodo_borrar(tree, tree->root, value, falso,
+			AVL_TREE_VALOR_INVALIDO);
 
 	if (newroot != tree->root) {
 		tree->root = newroot;
@@ -1160,15 +1325,23 @@ static inline int caca_comun_lee_matrix_long_stdin(tipo_dato *matrix,
 	return 0;
 }
 
-#define MEDIA_MIERDA_ALTURA(llave) ((natural)((llave)>>32))
-#define MEDIA_MIERDA_IDX(llave) ((natural)(llave))
-
-static inline tipo_dato media_mierda(avl_tree_t *arbolin,int numerin,natural idx, bool anadir){
-	tipo_dato llave_nueva=0;
-
-	llave_nueva=((tipo_dato)numerin)<<32;
-	llave_nueva|=idx;
-	caca_log_debug("la llave nueva %lu", num_estrellas);
+static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
+		natural idx, bool anadir) {
+	bool se_hizo_algo = falso;
+	caca_log_debug("%s el num %d(%u)", anadir?"poniendo":"quitando", numerin,
+			idx);
+	if (anadir) {
+		avl_tree_insert(arbolin, numerin, idx);
+		se_hizo_algo = verdadero;
+	} else {
+		if (arbolin->nodos_realmente_en_arbol > 1
+				&& avl_tree_find(arbolin, numerin, AVL_TREE_VALOR_INVALIDO)) {
+			avl_tree_borrar(arbolin, numerin);
+			se_hizo_algo = verdadero;
+		}
+	}
+	caca_log_debug("se izo algo %u %s", se_hizo_algo, se_hizo_algo?"si":"nel");
+	return 0;
 }
 
 void media_mierda_main() {
@@ -1205,13 +1378,8 @@ void media_mierda_main() {
 
 		assert_timeout(ope == 'a' || ope == 'r');
 
-/*
-		if (ope == 'a') {
-			avl_tree_insert(arbolin, estrella_negra);
-		} else {
-
-		}
-		*/
+		media_mierda_core(arbolin, num_actual, i, ope == 'a');
+		i++;
 	}
 
 	avl_tree_destroy(arbolin);
