@@ -37,7 +37,7 @@
 #define CACA_COMUN_ASSERT_NIMADRES 2
 
 typedef unsigned int natural;
-typedef long long tipo_dato;
+typedef unsigned long long tipo_dato;
 
 typedef long long bitch_vector;
 
@@ -604,8 +604,7 @@ void avl_tree_traverse_dfs(avl_tree_t *tree) {
 
 static inline void avl_tree_iterador_ini(avl_tree_t *arbolin,
 		avl_tree_iterator_t *iter) {
-	iter->contador_visitas = calloc(arbolin->nodos_realmente_en_arbol,
-			sizeof(char));
+	iter->contador_visitas = calloc(arbolin->max_nodos, sizeof(char));
 	assert_timeout(iter->contador_visitas);
 	iter->arbolin = arbolin;
 }
@@ -624,65 +623,41 @@ static inline avl_tree_node_t* avl_tree_iterador_siguiente(
 		avl_tree_iterator_t *iter) {
 	int contador_actual = 0;
 	avl_tree_node_t *nodo = NULL;
-	avl_tree_node_t *last_of_us = NULL;
 	avl_tree_node_t *nodo_actual = NULL;
 
-	if (!iter->nodo_actual) {
-		nodo_actual = iter->nodo_actual = iter->arbolin->root;
+	nodo_actual = iter->nodo_actual;
+	if (!nodo_actual) {
+		iter->nodo_actual = iter->arbolin->root;
+		if (iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]) {
+			return NULL;
+		}
+		iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
+		return iter->nodo_actual;
 	}
 
-	if (!avl_tree_iterador_hay_siguiente(iter)) {
-		return NULL;
-	}
-
-	contador_actual =
-			iter->contador_visitas[iter->nodo_actual->indice_en_arreglo];
-
-	iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
-
-	switch (contador_actual) {
-	case 0:
-	case 1:
-		if (!contador_actual) {
-			nodo_actual = iter->nodo_actual->left;
-			if (!nodo_actual) {
-				return iter->nodo_actual;
-			}
+	if (nodo_actual->right
+			&& !iter->contador_visitas[nodo_actual->right->indice_en_arreglo]) {
+		nodo_actual = nodo_actual->right;
+		while (nodo_actual->left) {
+			nodo_actual = nodo_actual->left;
+		}
+		nodo = nodo_actual;
+		iter->contador_visitas[nodo->indice_en_arreglo]++;
+	} else {
+		nodo_actual = nodo_actual->padre;
+		while (nodo_actual
+				&& iter->contador_visitas[nodo_actual->indice_en_arreglo]) {
+			nodo_actual = nodo_actual->padre;
+		}
+		if (!nodo_actual) {
+			nodo = NULL;
 		} else {
-			nodo_actual = iter->nodo_actual->right;
-			if (!nodo_actual) {
-				nodo_actual = iter->nodo_actual->padre;
-				while (nodo_actual
-						&& iter->contador_visitas[nodo_actual->indice_en_arreglo]
-								== 2) {
-					last_of_us = nodo_actual;
-					nodo_actual = nodo_actual->padre;
-				}
-				if (!nodo_actual) {
-					if (last_of_us) {
-						iter->nodo_actual = last_of_us;
-					}
-				} else {
-					iter->nodo_actual = nodo_actual;
-				}
-				return nodo_actual;
-			}
+			nodo = nodo_actual;
+			iter->contador_visitas[nodo->indice_en_arreglo]++;
 		}
-
-		while (nodo_actual) {
-			last_of_us = nodo_actual;
-			iter->contador_visitas[nodo_actual->indice_en_arreglo]++;
-			nodo_actual = last_of_us->left;
-		}
-
-		nodo = iter->nodo_actual = last_of_us;
-
-		break;
-	default:
-		assert_timeout(0)
-		;
-		break;
 	}
+
+	iter->nodo_actual = nodo;
 
 	return nodo;
 }
@@ -1294,7 +1269,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		natural idx, bool anadir) {
 	bool se_hizo_algo = falso;
 	natural num_cacas = 0;
+	tipo_dato numerin_largo = 0;
 	tipo_dato mierdia_al_doble = MEDIA_MIERDA_VALOR_INVALIDO;
+
+	numerin_largo = numerin & 0xffffffff;
 
 	if (arbolin->root) {
 		num_cacas = arbolin->root->num_decendientes + 1;
@@ -1304,13 +1282,14 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			idx);
 	caca_log_debug("numde cacas original %u", num_cacas);
 	if (anadir) {
-		avl_tree_insert(arbolin, numerin, idx);
+		avl_tree_insert(arbolin, (tipo_dato) numerin_largo, idx);
 		se_hizo_algo = verdadero;
 		num_cacas++;
 	} else {
 		if (arbolin->nodos_realmente_en_arbol > 1
-				&& avl_tree_find(arbolin, numerin, AVL_TREE_VALOR_INVALIDO)) {
-			avl_tree_borrar(arbolin, numerin);
+				&& avl_tree_find(arbolin, numerin_largo,
+						AVL_TREE_VALOR_INVALIDO)) {
+			avl_tree_borrar(arbolin, numerin_largo);
 			se_hizo_algo = verdadero;
 			num_cacas--;
 		}
@@ -1330,15 +1309,18 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		avl_tree_iterator_t *iter = &(avl_tree_iterator_t ) { 0 };
 
 		if (num_cacas == 1) {
-			return arbolin->root->llave << 1;
+			caca_log_debug("solo 1 elem, root %d", arbolin->root->llave);
+			return arbolin->root->llave * 2;
 		}
 		if (num_cacas == 2) {
 			mierdia = arbolin->root->llave;
+			caca_log_debug("solo 2 elems, root %d", arbolin->root->llave);
 			if (arbolin->root->left) {
 				mierdia_par = arbolin->root->left->llave;
 			} else {
 				mierdia_par = arbolin->root->right->llave;
 			}
+			caca_log_debug("solo 2 elems, par %d", mierdia_par);
 
 			return mierdia + mierdia_par;
 		}
@@ -1412,7 +1394,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			if (hubo_par) {
 				mierdia_al_doble = mierdia + mierdia_par;
 			} else {
-				mierdia_al_doble = mierdia << 1;
+				mierdia_al_doble = mierdia * 2;
 			}
 		}
 
@@ -1449,7 +1431,7 @@ void media_mierda_main() {
 	while ((bytes_read = getline(&buffer, &(size_t ) { 0 }, stdin)) != -1) {
 		char ope = '\0';
 		natural num_actual = 0;
-		tipo_dato resul=0;
+		tipo_dato resul = 0;
 
 		caca_log_debug("la cadenita leida %s", buffer);
 		sscanf(buffer, "%c %d", &ope, &num_actual);
@@ -1458,7 +1440,20 @@ void media_mierda_main() {
 
 		assert_timeout(ope == 'a' || ope == 'r');
 
-		resul=media_mierda_core(arbolin, num_actual, i, ope == 'a');
+		resul = media_mierda_core(arbolin, num_actual, i, ope == 'a');
+		caca_log_debug("el mierdia double %lld", resul&0xffffffff);
+		double resul_bueno = ((tipo_dato) (resul & 0xffffffff));
+		caca_log_debug("el resu bueno %f", resul_bueno);
+		resul_bueno /= 2;
+		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
+			if (resul % 2) {
+				printf("%.1f\n", resul_bueno);
+			} else {
+				printf("%.0f\n", resul_bueno);
+			}
+		} else {
+			printf("Wrong!\n");
+		}
 		i++;
 	}
 
