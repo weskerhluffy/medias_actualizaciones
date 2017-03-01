@@ -620,14 +620,6 @@ static inline bool avl_tree_iterador_hay_siguiente(avl_tree_iterator_t *iter) {
 					== 2);
 }
 
-static inline bool avl_tree_iterador_hay_anterior(avl_tree_iterator_t *iter) {
-	bool resultado = falso;
-	resultado =
-			iter->nodo_actual->left
-					&& !iter->contador_visitas[iter->nodo_actual->left->indice_en_arreglo];
-	return resultado;
-}
-
 static inline avl_tree_node_t* avl_tree_iterador_siguiente(
 		avl_tree_iterator_t *iter) {
 	int contador_actual = 0;
@@ -704,45 +696,37 @@ static inline avl_tree_node_t* avl_tree_iterador_anterior(
 	nodo_actual = iter->nodo_actual;
 	if (!nodo_actual) {
 		iter->nodo_actual = iter->arbolin->root;
-		if(iter->contador_visitas[iter->nodo_actual->indice_en_arreglo])
-		{
+		if (iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]) {
 			return NULL;
 		}
 		iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
 		return iter->nodo_actual;
 	}
 
-	if (!avl_tree_iterador_hay_anterior(iter)) {
-		return NULL;
-	}
-
-	if (nodo_actual->left && !iter->contador_visitas[nodo_actual->left->indice_en_arreglo])
-	{
+	if (nodo_actual->left
+			&& !iter->contador_visitas[nodo_actual->left->indice_en_arreglo]) {
 		nodo_actual = nodo_actual->left;
-		while(nodo_actual->right)
-		{
-			nodo_actual=nodo_actual->right;
+		while (nodo_actual->right) {
+			nodo_actual = nodo_actual->right;
 		}
 		nodo = nodo_actual;
-	        iter->contador_visitas[nodo->indice_en_arreglo]++;
-	}
-	else
-	{
+		iter->contador_visitas[nodo->indice_en_arreglo]++;
+	} else {
 		nodo_actual = nodo_actual->padre;
-		while (nodo_actual && iter->contador_visitas[nodo_actual->indice_en_arreglo]) {
+		while (nodo_actual
+				&& iter->contador_visitas[nodo_actual->indice_en_arreglo]) {
 			nodo_actual = nodo_actual->padre;
 		}
 		if (!nodo_actual) {
 			nodo = NULL;
 		} else {
-			nodo= nodo_actual;
-	        	iter->contador_visitas[nodo->indice_en_arreglo]++;
+			nodo = nodo_actual;
+			iter->contador_visitas[nodo->indice_en_arreglo]++;
 		}
-
 	}
 
-	iter->nodo_actual=nodo;
-	
+	iter->nodo_actual = nodo;
+
 	return nodo;
 }
 
@@ -1309,18 +1293,16 @@ static inline int caca_comun_lee_matrix_long_stdin(tipo_dato *matrix,
 static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		natural idx, bool anadir) {
 	bool se_hizo_algo = falso;
+	natural num_cacas = 0;
+	tipo_dato mierdia_al_doble = MEDIA_MIERDA_VALOR_INVALIDO;
 
-	natural num_cacas=0;
-
-	if(arbolin.root)
-	{
-		num_cacas=arbolin->root->num_decendientes + 1;
+	if (arbolin->root) {
+		num_cacas = arbolin->root->num_decendientes + 1;
 	}
-
 
 	caca_log_debug("%s el num %d(%u)", anadir?"poniendo":"quitando", numerin,
 			idx);
-	caca_log_debug("numde cacas original %u",num_cacas);
+	caca_log_debug("numde cacas original %u", num_cacas);
 	if (anadir) {
 		avl_tree_insert(arbolin, numerin, idx);
 		se_hizo_algo = verdadero;
@@ -1333,50 +1315,112 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			num_cacas--;
 		}
 	}
-	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo, se_hizo_algo?"si":"nel",num_cacas);
-	if(se_hizo_algo)
-	{
-		bool cargado_izq=falso;
-		natural pos_mierdia=num_cacas>>1;
-		natural pos_raiz=0;
-		natural desfase=0;
-		int mierdia=0;
+	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo,
+			se_hizo_algo?"si":"nel", num_cacas);
+	if (se_hizo_algo) {
+		bool cargado_izq = falso;
+		bool hubo_par = falso;
+		natural pos_mierdia = num_cacas >> 1;
+		natural pos_raiz = 0;
+		natural desfase = 0;
+		int mierdia = 0;
+		int mierdia_par = 0;
 		natural i = 0;
-		avl_tree_node_t *nodo=NULL;
-		avl_tree_iterator_t *iter=&(avl_tree_iterator_t){0};
+		avl_tree_node_t *nodo = NULL;
+		avl_tree_iterator_t *iter = &(avl_tree_iterator_t ) { 0 };
 
+		if (num_cacas == 1) {
+			return arbolin->root->llave << 1;
+		}
+		if (num_cacas == 2) {
+			mierdia = arbolin->root->llave;
+			if (arbolin->root->left) {
+				mierdia_par = arbolin->root->left->llave;
+			} else {
+				mierdia_par = arbolin->root->right->llave;
+			}
 
-		avl_tree_iterador_ini(arbolin,iter);
+			return mierdia + mierdia_par;
+		}
 
+		avl_tree_iterador_ini(arbolin, iter);
 
-		if(arbolin->root->left)
-		{
+		if (arbolin->root->left) {
 			pos_raiz = arbolin->root->left->num_decendientes + 1;
 		}
+		caca_log_debug("la pos raiz %u, pos mierdia %u, num cacas %u", pos_raiz,
+				pos_mierdia, num_cacas);
 
-		if(pos_raiz>=pos_mierdia)
-		{
-			cargado_izq=verdadero;
-			desfase=pos_raiz-pos_mierdia;
+		if (pos_raiz >= pos_mierdia) {
+			cargado_izq = verdadero;
+			desfase = pos_raiz - pos_mierdia;
+			caca_log_debug("recorriendo a la izq desfase %u", desfase);
 
-			i=0;
-			while(i<=desfase)
-			{
-				avl_tree_iterador_anterior(iter);
+			i = 0;
+			while (i <= desfase) {
+				nodo = avl_tree_iterador_anterior(iter);
+				caca_log_debug("recorriendo %d", nodo->llave);
 				i++;
 			}
-			mierdia=nodo->llave;
-		}
-		else
-		{
-			cargado_izq=falso;
-			desfase=pos_mierdia-pos_raiz;
+			nodo = avl_tree_iterador_obtener_actual(iter);
+			mierdia = nodo->llave;
+			caca_log_debug("la mierdia es %d", mierdia);
+
+			if (!(num_cacas % 2)) {
+				nodo = avl_tree_iterador_anterior(iter);
+				mierdia_par = nodo->llave;
+				caca_log_debug("la mierdia par %d", mierdia_par);
+				hubo_par = verdadero;
+			}
+
+			if (hubo_par) {
+				mierdia_al_doble = mierdia + mierdia_par;
+			} else {
+				mierdia_al_doble = mierdia << 1;
+			}
+		} else {
+			int factor_correccion_idx_par = 0;
+			cargado_izq = falso;
+			desfase = pos_mierdia - pos_raiz;
+
+			caca_log_debug("recorriendo a la der desfase %u", desfase);
+
+			if (!(num_cacas % 2)) {
+				hubo_par = verdadero;
+				factor_correccion_idx_par = -1;
+			}
+			caca_log_debug("factor de correccion par %d",
+					factor_correccion_idx_par);
+
+			i = 0;
+			while (i <= desfase + factor_correccion_idx_par) {
+				nodo = avl_tree_iterador_siguiente(iter);
+				caca_log_debug("recorriendo %d", nodo->llave);
+				i++;
+			}
+			nodo = avl_tree_iterador_obtener_actual(iter);
+			mierdia = nodo->llave;
+			caca_log_debug("la mierdia es %d", mierdia);
+
+			if (hubo_par) {
+				nodo = avl_tree_iterador_siguiente(iter);
+				mierdia_par = nodo->llave;
+				caca_log_debug("la mierdia par %d", mierdia_par);
+				hubo_par = verdadero;
+			}
+
+			if (hubo_par) {
+				mierdia_al_doble = mierdia + mierdia_par;
+			} else {
+				mierdia_al_doble = mierdia << 1;
+			}
 		}
 
+		caca_log_debug("la mierda doble %d", mierdia_al_doble);
 
 		avl_tree_iterador_fini(iter);
 	}
-	return 0;
+	return mierdia_al_doble;
 }
 
 void media_mierda_main() {
@@ -1405,6 +1449,7 @@ void media_mierda_main() {
 	while ((bytes_read = getline(&buffer, &(size_t ) { 0 }, stdin)) != -1) {
 		char ope = '\0';
 		natural num_actual = 0;
+		tipo_dato resul=0;
 
 		caca_log_debug("la cadenita leida %s", buffer);
 		sscanf(buffer, "%c %d", &ope, &num_actual);
@@ -1413,101 +1458,12 @@ void media_mierda_main() {
 
 		assert_timeout(ope == 'a' || ope == 'r');
 
-		media_mierda_core(arbolin, num_actual, i, ope == 'a');
+		resul=media_mierda_core(arbolin, num_actual, i, ope == 'a');
 		i++;
 	}
 
 	avl_tree_destroy(arbolin);
 
-	/*
-
-	 for (i = 0; i < num_estrellas; i++) {
-	 tipo_dato num_estrellas_abajo_izq = 0;
-	 tipo_dato estrella_negra = 0;
-
-	 estrella_negra = *(coordenadas_enmascaradas + i);
-
-	 caca_log_debug("insertando %u,%u (%lu)", (natural)(estrella_negra>>32),
-	 (natural)estrella_negra, estrella_negra);
-
-	 avl_tree_insert(arbolin, estrella_negra);
-	 avl_tree_insert(arbolin, estrella_negra);
-
-	 #ifndef ONLINE_JUDGE
-	 avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
-	 memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 10);
-	 #endif
-
-	 caca_log_debug("el arbolin aora es\n%s",
-	 avl_tree_sprint_identado(arbolin,buffer));
-
-	 #ifndef MEDIA_MIERDA_CONTEO_PROBADO
-	 #ifndef MEDIA_MIERDA_CONTEO_ITERA
-
-	 tipo_dato raiz_valor = 0;
-
-	 raiz_valor = arbolin->root->llave;
-
-	 avl_tree_borrar(arbolin, raiz_valor);
-
-	 caca_log_debug("el arbolin despues de borrar raiz\n%s",
-	 avl_tree_sprint_identado(arbolin,buffer));
-
-	 avl_tree_borrar(arbolin, estrella_negra);
-	 avl_tree_borrar(arbolin, estrella_negra);
-	 avl_tree_borrar(arbolin, estrella_negra);
-
-	 caca_log_debug("el arbolin despues de borrar nuevo valor\n%s",
-	 avl_tree_sprint_identado(arbolin,buffer));
-
-	 #ifndef ONLINE_JUDGE
-	 avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
-	 caca_log_debug("validado despues de borrar \n");
-	 #endif
-
-	 caca_log_debug("insertando %llu con nodos en arbol %u", estrella_negra,
-	 arbolin->nodos_realmente_en_arbol);
-	 avl_tree_insert(arbolin, estrella_negra);
-	 caca_log_debug("el arbolin despues de insertar de nuez estresha es\n%s",
-	 avl_tree_sprint_identado(arbolin,buffer));
-	 if (raiz_valor != estrella_negra) {
-	 avl_tree_insert(arbolin, raiz_valor);
-	 avl_tree_insert(arbolin, raiz_valor);
-	 avl_tree_insert(arbolin, raiz_valor);
-	 avl_tree_borrar(arbolin, raiz_valor);
-	 avl_tree_borrar(arbolin, raiz_valor);
-	 }
-
-	 caca_log_debug("el arbolin despues de insertar de nuez es\n%s",
-	 avl_tree_sprint_identado(arbolin,buffer));
-
-	 #ifndef ONLINE_JUDGE
-	 avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
-	 caca_log_debug("validado despues de insertar again\n");
-	 #endif
-
-	 num_estrellas_abajo_izq = media_mierda_contar_nodos_izq_aba_descartando(
-	 arbolin, estrella_negra);
-	 #else
-	 num_estrellas_abajo_izq = media_mierda_contar_nodos_izq_aba_iterando(
-	 arbolin, estrella_negra);
-	 #endif
-	 #else
-	 num_estrellas_abajo_izq = media_mierda_contar_nodos_izq_aba(
-	 arbolin, estrella_negra);
-	 #endif
-	 conteos_niveles[num_estrellas_abajo_izq]++;
-	 }
-
-	 caca_log_debug("los niveles kedaron %s",
-	 caca_arreglo_a_cadena(conteos_niveles,num_estrellas,buffer));
-
-	 for (i = 0; i < num_estrellas; i++) {
-	 printf("%llu\n", conteos_niveles[i]);
-	 }
-
-
-	 */
 	free(numeros);
 	free(buffer);
 }
