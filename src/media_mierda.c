@@ -699,66 +699,50 @@ static inline avl_tree_node_t* avl_tree_iterador_anterior(
 		avl_tree_iterator_t *iter) {
 	int contador_actual = 0;
 	avl_tree_node_t *nodo = NULL;
-	avl_tree_node_t *last_of_us = NULL;
 	avl_tree_node_t *nodo_actual = NULL;
 
-	if (!iter->nodo_actual) {
-		nodo_actual = iter->nodo_actual = iter->arbolin->root;
+	nodo_actual = iter->nodo_actual;
+	if (!nodo_actual) {
+		iter->nodo_actual = iter->arbolin->root;
+		if(iter->contador_visitas[iter->nodo_actual->indice_en_arreglo])
+		{
+			return NULL;
+		}
+		iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
+		return iter->nodo_actual;
 	}
 
 	if (!avl_tree_iterador_hay_anterior(iter)) {
 		return NULL;
 	}
 
-	contador_actual =
-			iter->contador_visitas[iter->nodo_actual->indice_en_arreglo];
-
-	iter->contador_visitas[iter->nodo_actual->indice_en_arreglo]++;
-
-	switch (contador_actual) {
-	case 0:
-	case 1:
-		if (!contador_actual) {
-			nodo_actual = iter->nodo_actual->left;
-			if (!nodo_actual) {
-				return iter->nodo_actual;
-			}
+	if (nodo_actual->left && !iter->contador_visitas[nodo_actual->left->indice_en_arreglo])
+	{
+		nodo_actual = nodo_actual->left;
+		while(nodo_actual->right)
+		{
+			nodo_actual=nodo_actual->right;
+		}
+		nodo = nodo_actual;
+	        iter->contador_visitas[nodo->indice_en_arreglo]++;
+	}
+	else
+	{
+		nodo_actual = nodo_actual->padre;
+		while (nodo_actual && iter->contador_visitas[nodo_actual->indice_en_arreglo]) {
+			nodo_actual = nodo_actual->padre;
+		}
+		if (!nodo_actual) {
+			nodo = NULL;
 		} else {
-			nodo_actual = iter->nodo_actual->right;
-			if (!nodo_actual) {
-				nodo_actual = iter->nodo_actual->padre;
-				while (nodo_actual
-						&& iter->contador_visitas[nodo_actual->indice_en_arreglo]
-								== 2) {
-					last_of_us = nodo_actual;
-					nodo_actual = nodo_actual->padre;
-				}
-				if (!nodo_actual) {
-					if (last_of_us) {
-						iter->nodo_actual = last_of_us;
-					}
-				} else {
-					iter->nodo_actual = nodo_actual;
-				}
-				return nodo_actual;
-			}
+			nodo= nodo_actual;
+	        	iter->contador_visitas[nodo->indice_en_arreglo]++;
 		}
 
-		while (nodo_actual) {
-			last_of_us = nodo_actual;
-			iter->contador_visitas[nodo_actual->indice_en_arreglo]++;
-			nodo_actual = last_of_us->left;
-		}
-
-		nodo = iter->nodo_actual = last_of_us;
-
-		break;
-	default:
-		assert_timeout(0)
-		;
-		break;
 	}
 
+	iter->nodo_actual=nodo;
+	
 	return nodo;
 }
 
@@ -766,9 +750,6 @@ static inline avl_tree_node_t* avl_tree_iterador_obtener_actual(
 		avl_tree_iterator_t *iter) {
 	avl_tree_node_t *nodo = NULL;
 
-	if (!iter->nodo_actual) {
-		avl_tree_iterador_siguiente(iter);
-	}
 	nodo = iter->nodo_actual;
 
 	return nodo;
@@ -1328,19 +1309,73 @@ static inline int caca_comun_lee_matrix_long_stdin(tipo_dato *matrix,
 static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		natural idx, bool anadir) {
 	bool se_hizo_algo = falso;
+
+	natural num_cacas=0;
+
+	if(arbolin.root)
+	{
+		num_cacas=arbolin->root->num_decendientes + 1;
+	}
+
+
 	caca_log_debug("%s el num %d(%u)", anadir?"poniendo":"quitando", numerin,
 			idx);
+	caca_log_debug("numde cacas original %u",num_cacas);
 	if (anadir) {
 		avl_tree_insert(arbolin, numerin, idx);
 		se_hizo_algo = verdadero;
+		num_cacas++;
 	} else {
 		if (arbolin->nodos_realmente_en_arbol > 1
 				&& avl_tree_find(arbolin, numerin, AVL_TREE_VALOR_INVALIDO)) {
 			avl_tree_borrar(arbolin, numerin);
 			se_hizo_algo = verdadero;
+			num_cacas--;
 		}
 	}
-	caca_log_debug("se izo algo %u %s", se_hizo_algo, se_hizo_algo?"si":"nel");
+	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo, se_hizo_algo?"si":"nel",num_cacas);
+	if(se_hizo_algo)
+	{
+		bool cargado_izq=falso;
+		natural pos_mierdia=num_cacas>>1;
+		natural pos_raiz=0;
+		natural desfase=0;
+		int mierdia=0;
+		natural i = 0;
+		avl_tree_node_t *nodo=NULL;
+		avl_tree_iterator_t *iter=&(avl_tree_iterator_t){0};
+
+
+		avl_tree_iterador_ini(arbolin,iter);
+
+
+		if(arbolin->root->left)
+		{
+			pos_raiz = arbolin->root->left->num_decendientes + 1;
+		}
+
+		if(pos_raiz>=pos_mierdia)
+		{
+			cargado_izq=verdadero;
+			desfase=pos_raiz-pos_mierdia;
+
+			i=0;
+			while(i<=desfase)
+			{
+				avl_tree_iterador_anterior(iter);
+				i++;
+			}
+			mierdia=nodo->llave;
+		}
+		else
+		{
+			cargado_izq=falso;
+			desfase=pos_mierdia-pos_raiz;
+		}
+
+
+		avl_tree_iterador_fini(iter);
+	}
 	return 0;
 }
 
