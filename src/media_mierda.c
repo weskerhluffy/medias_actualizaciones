@@ -1321,8 +1321,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 				mierdia_par = arbolin->root->right->llave;
 			}
 			caca_log_debug("solo 2 elems, par %d", mierdia_par);
+			tipo_dato crap=(tipo_dato)mierdia + (tipo_dato)mierdia_par;
+			caca_log_debug("suma mierda %lld", crap);
 
-			return mierdia + mierdia_par;
+			return crap;
 		}
 
 		avl_tree_iterador_ini(arbolin, iter);
@@ -1356,9 +1358,9 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 
 			if (hubo_par) {
-				mierdia_al_doble = mierdia + mierdia_par;
+				mierdia_al_doble = (tipo_dato)mierdia + (tipo_dato)mierdia_par;
 			} else {
-				mierdia_al_doble = mierdia << 1;
+				mierdia_al_doble = (tipo_dato)mierdia *2;
 			}
 		} else {
 			int factor_correccion_idx_par = 0;
@@ -1392,9 +1394,9 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 
 			if (hubo_par) {
-				mierdia_al_doble = mierdia + mierdia_par;
+				mierdia_al_doble = (tipo_dato)mierdia + (tipo_dato)mierdia_par;
 			} else {
-				mierdia_al_doble = mierdia * 2;
+				mierdia_al_doble = (tipo_dato)mierdia * 2;
 			}
 		}
 
@@ -1431,7 +1433,7 @@ void media_mierda_main() {
 	while ((bytes_read = getline(&buffer, &(size_t ) { 0 }, stdin)) != -1) {
 		char ope = '\0';
 		natural num_actual = 0;
-		tipo_dato resul = 0;
+		long long resul = 0;
 
 		caca_log_debug("la cadenita leida %s", buffer);
 		sscanf(buffer, "%c %d", &ope, &num_actual);
@@ -1441,8 +1443,8 @@ void media_mierda_main() {
 		assert_timeout(ope == 'a' || ope == 'r');
 
 		resul = media_mierda_core(arbolin, num_actual, i, ope == 'a');
-		caca_log_debug("el mierdia double %lld", resul&0xffffffff);
-		double resul_bueno = ((tipo_dato) (resul & 0xffffffff));
+		caca_log_debug("el mierdia double %lld", resul);
+		double resul_bueno = (long long)resul;
 		caca_log_debug("el resu bueno %f", resul_bueno);
 		resul_bueno /= 2;
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
