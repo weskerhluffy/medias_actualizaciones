@@ -7,10 +7,10 @@ br s -l 2183 -c "cont_queries==761"
 
 #settings set target.run-args < caca.txt
 #settings set target.run-args < caca1.txt
-#settings set target.run-args < caca2.txt
+settings set target.run-args < caca2.txt
 #settings set target.run-args < caca3.txt
 #settings set target.run-args < caca4.txt
-settings set target.run-args < caca5.txt
+#settings set target.run-args < caca5.txt
 #settings set target.run-args < caca_grande.txt
 #settings set target.run-args < /tmp/como.txt
 #settings set target.run-args < /tmp/como_rev.txt

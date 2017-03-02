@@ -37,7 +37,7 @@
 #define CACA_COMUN_ASSERT_NIMADRES 2
 
 typedef unsigned int natural;
-typedef unsigned long long tipo_dato;
+typedef long long tipo_dato;
 
 typedef long long bitch_vector;
 
@@ -86,6 +86,7 @@ void caca_log_debug_func(const char *format, ...);
 #define MEDIA_MIERDA_MAX_VALOR INT_MAX
 #define MEDIA_MIERDA_VALOR_INVALIDO -1LL
 
+char *buffer = NULL;
 #if 1
 
 #define AVL_TREE_VALOR_INVALIDO MEDIA_MIERDA_VALOR_INVALIDO
@@ -1105,7 +1106,7 @@ void caca_comun_current_utc_time(struct timespec *ts) {
 	ts->tv_sec = mts.tv_sec;
 	ts->tv_nsec = mts.tv_nsec;
 #else
-#ifndef ONLINE_JUDGE
+#ifdef CACA_COMUN_LOG
 	clock_gettime(CLOCK_REALTIME, ts);
 #endif
 #endif
@@ -1272,7 +1273,8 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 	tipo_dato numerin_largo = 0;
 	tipo_dato mierdia_al_doble = MEDIA_MIERDA_VALOR_INVALIDO;
 
-	numerin_largo = numerin & 0xffffffff;
+	numerin_largo = numerin;
+	caca_log_debug("el num largo %lld", numerin_largo);
 
 	if (arbolin->root) {
 		num_cacas = arbolin->root->num_decendientes + 1;
@@ -1285,6 +1287,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		avl_tree_insert(arbolin, (tipo_dato) numerin_largo, idx);
 		se_hizo_algo = verdadero;
 		num_cacas++;
+#ifdef CACA_COMUN_LOG
+		avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
+		memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
+#endif
 	} else {
 		if (arbolin->nodos_realmente_en_arbol > 1
 				&& avl_tree_find(arbolin, numerin_largo,
@@ -1292,6 +1298,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			avl_tree_borrar(arbolin, numerin_largo);
 			se_hizo_algo = verdadero;
 			num_cacas--;
+#ifdef CACA_COMUN_LOG
+			avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
+			memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
+#endif
 		}
 	}
 	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo,
@@ -1321,7 +1331,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 				mierdia_par = arbolin->root->right->llave;
 			}
 			caca_log_debug("solo 2 elems, par %d", mierdia_par);
-			tipo_dato crap=(tipo_dato)mierdia + (tipo_dato)mierdia_par;
+			tipo_dato crap = (tipo_dato) mierdia + (tipo_dato) mierdia_par;
 			caca_log_debug("suma mierda %lld", crap);
 
 			return crap;
@@ -1358,9 +1368,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 
 			if (hubo_par) {
-				mierdia_al_doble = (tipo_dato)mierdia + (tipo_dato)mierdia_par;
+				mierdia_al_doble = (tipo_dato) mierdia
+						+ (tipo_dato) mierdia_par;
 			} else {
-				mierdia_al_doble = (tipo_dato)mierdia *2;
+				mierdia_al_doble = (tipo_dato) mierdia * 2;
 			}
 		} else {
 			int factor_correccion_idx_par = 0;
@@ -1394,9 +1405,10 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 
 			if (hubo_par) {
-				mierdia_al_doble = (tipo_dato)mierdia + (tipo_dato)mierdia_par;
+				mierdia_al_doble = (tipo_dato) mierdia
+						+ (tipo_dato) mierdia_par;
 			} else {
-				mierdia_al_doble = (tipo_dato)mierdia * 2;
+				mierdia_al_doble = (tipo_dato) mierdia * 2;
 			}
 		}
 
@@ -1416,7 +1428,6 @@ void media_mierda_main() {
 	avl_tree_t *arbolin = NULL;
 	int i = 0;
 
-	char *buffer = NULL;
 	buffer = calloc(CACA_COMUN_TAM_MAX_LINEA * 1000, sizeof(char));
 	assert_timeout(buffer);
 
@@ -1430,7 +1441,8 @@ void media_mierda_main() {
 
 	avl_tree_create(&arbolin, MEDIA_MIERDA_MAX_ELEMENTOS_INPUT);
 
-	while ((bytes_read = getline(&buffer, &(size_t ) { 0 }, stdin)) != -1) {
+	while ((bytes_read = getline(&buffer,
+			&(size_t ) { CACA_COMUN_TAM_MAX_LINEA * 1000 }, stdin)) != -1) {
 		char ope = '\0';
 		natural num_actual = 0;
 		long long resul = 0;
@@ -1444,7 +1456,7 @@ void media_mierda_main() {
 
 		resul = media_mierda_core(arbolin, num_actual, i, ope == 'a');
 		caca_log_debug("el mierdia double %lld", resul);
-		double resul_bueno = (long long)resul;
+		double resul_bueno = (long long) resul;
 		caca_log_debug("el resu bueno %f", resul_bueno);
 		resul_bueno /= 2;
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
