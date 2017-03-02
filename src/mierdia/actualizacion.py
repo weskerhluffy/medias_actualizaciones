@@ -8,7 +8,7 @@ import sys
 import ctypes
 
 nivel_log = logging.ERROR
-nivel_log = logging.DEBUG
+#nivel_log = logging.DEBUG
 logger_cagada = None
 
 def imprimir_lista_con_idx(lista):

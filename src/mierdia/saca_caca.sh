@@ -5,7 +5,8 @@ do
 	log_arch=${shit%.txt}.log
 	echo "el log es $log_arch"
 
-	python3 actualizacion.py < $shit &> $log_arch
+#	python3 actualizacion.py < $shit &> $log_arch
+	/programas/python3.5/bin/python3 actualizacion.py < $shit &> $log_arch
 	r_code=$?
 	if [ $r_code -ne 0 ]
         then
