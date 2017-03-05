@@ -45,10 +45,10 @@ typedef enum BOOLEANOS {
 	falso = 0, verdadero
 } bool;
 
-/*
  #define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_SUAVECITO
- */
+/*
 #define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_DUROTE
+ */
 
 #define assert_timeout_dummy(condition) 0;
 
@@ -56,7 +56,7 @@ typedef enum BOOLEANOS {
 #define assert_timeout(condition) assert(condition);
 #endif
 #if CACA_COMUN_TIPO_ASSERT == CACA_COMUN_ASSERT_SUAVECITO
-#define assert_timeout(condition) if(!(condition)){printf("fuck\n");sleep(10);}
+#define assert_timeout(condition) if(!(condition)){sleep(2);abort();}
 #endif
 #if CACA_COMUN_TIPO_ASSERT == CACA_COMUN_ASSERT_NIMADRES
 #define assert_timeout(condition) 0
@@ -1533,6 +1533,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 	if (arbolin->root) {
 		num_cacas = arbolin->root->num_decendientes + 1;
 	}
+	assert_timeout(arbolin->nodos_realmente_en_arbol == num_cacas);
 
 	caca_log_debug("%s el num %d(%u)", anadir?"poniendo":"quitando", numerin,
 			idx);
@@ -1560,6 +1561,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 	}
 	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo,
 			se_hizo_algo?"si":"nel", num_cacas);
+	assert_timeout(arbolin->nodos_realmente_en_arbol == num_cacas);
 	if (se_hizo_algo) {
 		bool cargado_izq = falso;
 		bool hubo_par = falso;
@@ -1698,7 +1700,7 @@ void media_mierda_main() {
 	while ((bytes_read = getline(&buffer,
 			&(size_t ) { CACA_COMUN_TAM_MAX_LINEA * 1000 }, stdin)) != -1) {
 		char ope = '\0';
-		natural num_actual = 0;
+		int num_actual = 0;
 		long long resul = 0;
 
 		caca_log_debug("la cadenita leida %s", buffer);
@@ -1718,8 +1720,11 @@ void media_mierda_main() {
 #ifdef CACA_COMUN_VALIDA
 	bool izo=falso;
 	struct node* actual=NULL;
+	natural tam_caca=length();
+	caca_log_debug("tam inicial debug %d la ope %c", tam_caca,ope);
 	if(ope=='a')
 	{
+		caca_log_debug("insertando debug %d", num_actual);
 		insertFirst(num_actual,i);
 		izo=verdadero;
 	}
@@ -1727,13 +1732,16 @@ void media_mierda_main() {
 	{
 		if(head && head->next && find(num_actual))
 		{
+			caca_log_debug("borrando debug %d", num_actual);
 			delete(num_actual);
 			izo=verdadero;
 		}
 	}
 	sort();
-	printList();
-	natural tam_caca=length();
+//	printList();
+	tam_caca=length();
+	caca_log_debug("tam debug despues %d", tam_caca);
+	assert_timeout(arbolin->nodos_realmente_en_arbol == tam_caca);
 
 	natural mitad_caca=tam_caca>>1;
 	natural conta_caca=0;
@@ -1746,6 +1754,7 @@ void media_mierda_main() {
 		if(tam_caca==1)
 		{
 			puta=(tipo_dato)head->key *2;
+			caca_log_debug("una sola mierda %lld", puta);
 		}
 		else
 		{
@@ -1756,6 +1765,7 @@ void media_mierda_main() {
 				conta_caca++;
 			}
 			mediano=actual->key;
+			caca_log_debug("el medi ano %d (%u) el tam caca %u ", mediano, mitad_caca-1,tam_caca);
 			if(!(tam_caca%2))
 			{
 				actual = head;
@@ -1766,6 +1776,7 @@ void media_mierda_main() {
 					conta_caca++;
 				}
 				mediano_par=actual->key;
+				caca_log_debug("el medi ano par  %d (%u)", mediano_par, mitad_caca-2);
 				puta=(tipo_dato)mediano+(tipo_dato)mediano_par;
 			}
 			else
@@ -1778,6 +1789,7 @@ void media_mierda_main() {
 	{
 		puta=MEDIA_MIERDA_VALOR_INVALIDO;
 	}
+//	sleep(2);
 	assert_timeout(puta==resul);
 #endif
 
