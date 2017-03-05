@@ -13,6 +13,7 @@ do
                 echo "verga, fallo en $shit"
                 exit 1
         fi
+	continue
 	diferen=$(diff $log_arch mierdia/$log_arch)
 	if [[ ! -z $diferen ]]
 	then

@@ -45,9 +45,9 @@ typedef enum BOOLEANOS {
 	falso = 0, verdadero
 } bool;
 
- #define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_SUAVECITO
+#define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_SUAVECITO
 /*
-#define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_DUROTE
+ #define CACA_COMUN_TIPO_ASSERT CACA_COMUN_ASSERT_DUROTE
  */
 
 #define assert_timeout_dummy(condition) 0;
@@ -821,36 +821,11 @@ static inline char* avl_tree_sprint_identado(avl_tree_t *arbolini, char *buf) {
 }
 
 static inline avl_tree_node_t* avl_tree_iterador_asignar_actual(
-		avl_tree_iterator_t *iter, tipo_dato llave) {
-	avl_tree_t *arbolazo = NULL;
-	avl_tree_node_t *nodo_actual = NULL;
-	avl_tree_node_t *last_of_us = NULL;
+		avl_tree_iterator_t *iter, avl_tree_node_t *nodo) {
 
-	arbolazo = iter->arbolin;
+	assert_timeout(!iter->contador_visitas[nodo->indice_en_arreglo]);
+	iter->nodo_actual = nodo;
 
-	nodo_actual = arbolazo->root;
-
-	while (nodo_actual) {
-		last_of_us = nodo_actual;
-		if (llave < nodo_actual->llave) {
-			iter->contador_visitas[nodo_actual->indice_en_arreglo] = 1;
-			nodo_actual = nodo_actual->left;
-		} else {
-			iter->contador_visitas[nodo_actual->indice_en_arreglo] = 2;
-			if (llave > nodo_actual->llave) {
-				nodo_actual = nodo_actual->right;
-			} else {
-				break;
-			}
-
-		}
-	}
-
-	if (nodo_actual) {
-		iter->nodo_actual = nodo_actual;
-	} else {
-		iter->nodo_actual = last_of_us;
-	}
 	iter->contador_visitas[iter->nodo_actual->indice_en_arreglo] = 1;
 	return iter->nodo_actual;
 }
@@ -882,6 +857,41 @@ static inline void avl_tree_validar_arbolin_indices(avl_tree_t *arbolin,
 		assert_timeout(!nodo->right || nodo->right->padre == nodo);
 		avl_tree_validar_arbolin_indices(arbolin, nodo->right);
 	}
+}
+
+static inline void avl_tree_validar_orden(avl_tree_t *arbolin) {
+	avl_tree_iterator_t *iter = &(avl_tree_iterator_t ) { 0 };
+	avl_tree_node_t *nodo_inicial = NULL;
+	avl_tree_node_t *nodo_actual = NULL;
+	tipo_dato llave_ant = 0;
+	tipo_dato pasajero_oscuro_ant = 0;
+	if (!arbolin->root) {
+		return;
+	}
+
+	nodo_inicial = avl_tree_max_min(arbolin, falso);
+
+	avl_tree_iterador_ini(arbolin, iter);
+	avl_tree_iterador_asignar_actual(iter, nodo_inicial);
+
+	llave_ant = nodo_inicial->llave;
+	pasajero_oscuro_ant = nodo_inicial->pasajero_oscuro;
+
+	while ((nodo_actual = avl_tree_iterador_siguiente(iter))) {
+		assert_timeout(llave_ant <= nodo_actual->llave);
+		assert_timeout(
+				llave_ant < nodo_actual->llave
+						|| pasajero_oscuro_ant <= nodo_actual->pasajero_oscuro);
+		llave_ant = nodo_actual->llave;
+		pasajero_oscuro_ant = nodo_actual->pasajero_oscuro;
+	}
+
+	avl_tree_iterador_fini(iter);
+}
+
+static inline void avl_tree_validar_alv(avl_tree_t *arbolin) {
+	avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
+	avl_tree_validar_orden(arbolin);
 }
 
 /* Balance a given node */
@@ -953,6 +963,7 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 								temp->indice_en_arreglo;
 						memset(temp, 0, sizeof(avl_tree_node_t));
 						temp->llave = AVL_TREE_VALOR_INVALIDO;
+						temp->pasajero_oscuro = AVL_TREE_VALOR_INVALIDO;
 						arbolini->nodos_realmente_en_arbol--;
 						caca_log_debug(
 								"disminuiendo nodos realmente en arbol a %u",
@@ -963,6 +974,7 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 								root->right);
 
 						root->llave = temp->llave;
+						root->pasajero_oscuro = temp->pasajero_oscuro;
 						root->ocurrencias = temp->ocurrencias;
 
 						root->right = avl_tree_nodo_borrar(arbolini,
@@ -1032,6 +1044,7 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 												root->right);
 
 								root->llave = temp->llave;
+								root->pasajero_oscuro = temp->pasajero_oscuro;
 								root->ocurrencias = temp->ocurrencias;
 
 								root->right = avl_tree_nodo_borrar(arbolini,
@@ -1095,15 +1108,14 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 
 #endif
 
-
 #if 1
 
 // XXX: https://www.tutorialspoint.com/data_structures_algorithms/linked_list_program_in_c.htm
 
 struct node {
-   int data;
-   int key;
-   struct node *next;
+	int data;
+	int key;
+	struct node *next;
 };
 
 struct node *head = NULL;
@@ -1111,243 +1123,242 @@ struct node *current = NULL;
 
 //display the list
 void printList() {
-   struct node *ptr = head;
-   caca_log_debug("imprimiendo lista");
-	
-   //start from the beginning
-   while(ptr != NULL) {
-      caca_log_debug("(%d,%d) ",ptr->key,ptr->data);
-      ptr = ptr->next;
-   }
-	
+	struct node *ptr = head;
+	caca_log_debug("imprimiendo lista");
+
+	//start from the beginning
+	while (ptr != NULL) {
+		caca_log_debug("(%d,%d) ", ptr->key, ptr->data);
+		ptr = ptr->next;
+	}
+
 }
 
 //insert link at the first location
 void insertFirst(int key, int data) {
-   //create a link
-   struct node *link = (struct node*) malloc(sizeof(struct node));
-	
-   link->key = key;
-   link->data = data;
-	
-   //point it to old first node
-   link->next = head;
-	
-   //point first to new first node
-   head = link;
+	//create a link
+	struct node *link = (struct node*) malloc(sizeof(struct node));
+
+	link->key = key;
+	link->data = data;
+
+	//point it to old first node
+	link->next = head;
+
+	//point first to new first node
+	head = link;
 }
 
 //delete first item
 struct node* deleteFirst() {
 
-   //save reference to first link
-   struct node *tempLink = head;
-	
-   //mark next to first link as first 
-   head = head->next;
-	
-   //return the deleted link
-   return tempLink;
+	//save reference to first link
+	struct node *tempLink = head;
+
+	//mark next to first link as first
+	head = head->next;
+
+	//return the deleted link
+	return tempLink;
 }
 
 //is list empty
 bool isEmpty() {
-   return head == NULL;
+	return head == NULL;
 }
 
 int length() {
-   int length = 0;
-   struct node *current;
-	
-   for(current = head; current != NULL; current = current->next) {
-      length++;
-   }
-	
-   return length;
+	int length = 0;
+	struct node *current;
+
+	for (current = head; current != NULL; current = current->next) {
+		length++;
+	}
+
+	return length;
 }
 
 //find a link with given key
 struct node* find(int key) {
 
-   //start from the first link
-   struct node* current = head;
+	//start from the first link
+	struct node* current = head;
 
-   //if list is empty
-   if(head == NULL) {
-      return NULL;
-   }
+	//if list is empty
+	if (head == NULL) {
+		return NULL;
+	}
 
-   //navigate through list
-   while(current->key != key) {
-	
-      //if it is last node
-      if(current->next == NULL) {
-         return NULL;
-      } else {
-         //go to next link
-         current = current->next;
-      }
-   }      
-	
-   //if data found, return the current Link
-   return current;
+	//navigate through list
+	while (current->key != key) {
+
+		//if it is last node
+		if (current->next == NULL) {
+			return NULL;
+		} else {
+			//go to next link
+			current = current->next;
+		}
+	}
+
+	//if data found, return the current Link
+	return current;
 }
 
 //delete a link with given key
 struct node* delete(int key) {
 
-   //start from the first link
-   struct node* current = head;
-   struct node* previous = NULL;
-	
-   //if list is empty
-   if(head == NULL) {
-      return NULL;
-   }
+	//start from the first link
+	struct node* current = head;
+	struct node* previous = NULL;
 
-   //navigate through list
-   while(current->key != key) {
+	//if list is empty
+	if (head == NULL) {
+		return NULL;
+	}
 
-      //if it is last node
-      if(current->next == NULL) {
-         return NULL;
-      } else {
-         //store reference to current link
-         previous = current;
-         //move to next link
-         current = current->next;
-      }
-   }
+	//navigate through list
+	while (current->key != key) {
 
-   //found a match, update the link
-   if(current == head) {
-      //change first to point to next link
-      head = head->next;
-   } else {
-      //bypass the current link
-      previous->next = current->next;
-   }    
-	
-   return current;
+		//if it is last node
+		if (current->next == NULL) {
+			return NULL;
+		} else {
+			//store reference to current link
+			previous = current;
+			//move to next link
+			current = current->next;
+		}
+	}
+
+	//found a match, update the link
+	if (current == head) {
+		//change first to point to next link
+		head = head->next;
+	} else {
+		//bypass the current link
+		previous->next = current->next;
+	}
+
+	return current;
 }
 
 void sort() {
 
-   int i, j, k, tempKey, tempData;
-   struct node *current;
-   struct node *next;
-	
-   int size = length();
-   k = size ;
-	
-   for ( i = 0 ; i < size - 1 ; i++, k-- ) {
-      current = head;
-      next = head->next;
-		
-      for ( j = 1 ; j < k ; j++ ) {   
-		
-         if ( current->key > next->key ) {
-            tempData = current->key;
-            current->key = next->key;
-            next->key = tempData;
+	int i, j, k, tempKey, tempData;
+	struct node *current;
+	struct node *next;
 
-            tempKey = current->data;
-            current->data = next->data;
-            next->data = tempKey;
-         }
-			
-         current = current->next;
-         next = next->next;
-      }
-   }   
+	int size = length();
+	k = size;
+
+	for (i = 0; i < size - 1; i++, k--) {
+		current = head;
+		next = head->next;
+
+		for (j = 1; j < k; j++) {
+
+			if (current->key > next->key) {
+				tempData = current->key;
+				current->key = next->key;
+				next->key = tempData;
+
+				tempKey = current->data;
+				current->data = next->data;
+				next->data = tempKey;
+			}
+
+			current = current->next;
+			next = next->next;
+		}
+	}
 }
 
 void reverse(struct node** head_ref) {
-   struct node* prev   = NULL;
-   struct node* current = *head_ref;
-   struct node* next;
-	
-   while (current != NULL) {
-      next  = current->next;
-      current->next = prev;   
-      prev = current;
-      current = next;
-   }
-	
-   *head_ref = prev;
+	struct node* prev = NULL;
+	struct node* current = *head_ref;
+	struct node* next;
+
+	while (current != NULL) {
+		next = current->next;
+		current->next = prev;
+		prev = current;
+		current = next;
+	}
+
+	*head_ref = prev;
 }
 #if 0
 
 main() {
-   insertFirst(1,10);
-   insertFirst(2,20);
-   insertFirst(3,30);
-   insertFirst(4,1);
-   insertFirst(5,40);
-   insertFirst(6,56); 
+	insertFirst(1,10);
+	insertFirst(2,20);
+	insertFirst(3,30);
+	insertFirst(4,1);
+	insertFirst(5,40);
+	insertFirst(6,56);
 
-   printf("Original List: "); 
-	
-   //print list
-   printList();
+	printf("Original List: ");
 
-   while(!isEmpty()) {            
-      struct node *temp = deleteFirst();
-      printf("\nDeleted value:");
-      printf("(%d,%d) ",temp->key,temp->data);
-   }  
-	
-   printf("\nList after deleting all items: ");
-   printList();
-   insertFirst(1,10);
-   insertFirst(2,20);
-   insertFirst(3,30);
-   insertFirst(4,1);
-   insertFirst(5,40);
-   insertFirst(6,56);
-   
-   printf("\nRestored List: ");
-   printList();
-   printf("\n");  
+	//print list
+	printList();
 
-   struct node *foundLink = find(4);
-	
-   if(foundLink != NULL) {
-      printf("Element found: ");
-      printf("(%d,%d) ",foundLink->key,foundLink->data);
-      printf("\n");  
-   } else {
-      printf("Element not found.");
-   }
+	while(!isEmpty()) {
+		struct node *temp = deleteFirst();
+		printf("\nDeleted value:");
+		printf("(%d,%d) ",temp->key,temp->data);
+	}
 
-   delete(4);
-   printf("List after deleting an item: ");
-   printList();
-   printf("\n");
-   foundLink = find(4);
-	
-   if(foundLink != NULL) {
-      printf("Element found: ");
-      printf("(%d,%d) ",foundLink->key,foundLink->data);
-      printf("\n");
-   } else {
-      printf("Element not found.");
-   }
-	
-   printf("\n");
-   sort();
-	
-   printf("List after sorting the data: ");
-   printList();
-	
-   reverse(&head);
-   printf("\nList after reversing the data: ");
-   printList();
+	printf("\nList after deleting all items: ");
+	printList();
+	insertFirst(1,10);
+	insertFirst(2,20);
+	insertFirst(3,30);
+	insertFirst(4,1);
+	insertFirst(5,40);
+	insertFirst(6,56);
+
+	printf("\nRestored List: ");
+	printList();
+	printf("\n");
+
+	struct node *foundLink = find(4);
+
+	if(foundLink != NULL) {
+		printf("Element found: ");
+		printf("(%d,%d) ",foundLink->key,foundLink->data);
+		printf("\n");
+	} else {
+		printf("Element not found.");
+	}
+
+	delete(4);
+	printf("List after deleting an item: ");
+	printList();
+	printf("\n");
+	foundLink = find(4);
+
+	if(foundLink != NULL) {
+		printf("Element found: ");
+		printf("(%d,%d) ",foundLink->key,foundLink->data);
+		printf("\n");
+	} else {
+		printf("Element not found.");
+	}
+
+	printf("\n");
+	sort();
+
+	printf("List after sorting the data: ");
+	printList();
+
+	reverse(&head);
+	printf("\nList after reversing the data: ");
+	printList();
 }
 #endif
 
 #endif
-
 
 void caca_comun_current_utc_time(struct timespec *ts) {
 
@@ -1542,8 +1553,8 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		avl_tree_insert(arbolin, (tipo_dato) numerin_largo, idx);
 		se_hizo_algo = verdadero;
 		num_cacas++;
-#ifdef CACA_COMUN_LOG
-		avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
+#ifdef CACA_COMUN_VALIDA
+		avl_tree_validar_alv(arbolin);
 		memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
 #endif
 	} else {
@@ -1553,8 +1564,8 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			avl_tree_borrar(arbolin, numerin_largo);
 			se_hizo_algo = verdadero;
 			num_cacas--;
-#ifdef CACA_COMUN_LOG
-			avl_tree_validar_arbolin_indices(arbolin, arbolin->root);
+#ifdef CACA_COMUN_VALIDA
+			avl_tree_validar_alv(arbolin);
 			memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
 #endif
 		}
@@ -1716,92 +1727,90 @@ void media_mierda_main() {
 		caca_log_debug("el resu bueno %f", resul_bueno);
 		resul_bueno /= 2;
 
-
 #ifdef CACA_COMUN_VALIDA
-	bool izo=falso;
-	struct node* actual=NULL;
-	natural tam_caca=length();
-	caca_log_debug("tam inicial debug %d la ope %c", tam_caca,ope);
-	if(ope=='a')
-	{
-		caca_log_debug("insertando debug %d", num_actual);
-		insertFirst(num_actual,i);
-		izo=verdadero;
-	}
-	else
-	{
-		if(head && head->next && find(num_actual))
+		bool izo=falso;
+		struct node* actual=NULL;
+		natural tam_caca=length();
+		caca_log_debug("tam inicial debug %d la ope %c", tam_caca,ope);
+		if(ope=='a')
 		{
-			caca_log_debug("borrando debug %d", num_actual);
-			delete(num_actual);
+			caca_log_debug("insertando debug %d", num_actual);
+			insertFirst(num_actual,i);
 			izo=verdadero;
-		}
-	}
-	sort();
-//	printList();
-	tam_caca=length();
-	caca_log_debug("tam debug despues %d", tam_caca);
-	assert_timeout(arbolin->nodos_realmente_en_arbol == tam_caca);
-
-	natural mitad_caca=tam_caca>>1;
-	natural conta_caca=0;
-	int mediano=0;
-	int mediano_par=0;
-	tipo_dato puta=0;
-
-	if(izo)
-	{
-		if(tam_caca==1)
-		{
-			puta=(tipo_dato)head->key *2;
-			caca_log_debug("una sola mierda %lld", puta);
 		}
 		else
 		{
-			actual = head;
-			while(conta_caca<mitad_caca && actual)
+			if(head && head->next && find(num_actual))
 			{
-				actual=actual->next;
-				conta_caca++;
+				caca_log_debug("borrando debug %d", num_actual);
+				delete(num_actual);
+				izo=verdadero;
 			}
-			mediano=actual->key;
-			caca_log_debug("el medi ano %d (%u) el tam caca %u ", mediano, mitad_caca-1,tam_caca);
-			if(!(tam_caca%2))
+		}
+		sort();
+//	printList();
+		tam_caca=length();
+		caca_log_debug("tam debug despues %d", tam_caca);
+		assert_timeout(arbolin->nodos_realmente_en_arbol == tam_caca);
+
+		natural mitad_caca=tam_caca>>1;
+		natural conta_caca=0;
+		int mediano=0;
+		int mediano_par=0;
+		tipo_dato puta=0;
+
+		if(izo)
+		{
+			if(tam_caca==1)
+			{
+				puta=(tipo_dato)head->key *2;
+				caca_log_debug("una sola mierda %lld", puta);
+			}
+			else
 			{
 				actual = head;
-				conta_caca=0;
-				while(conta_caca<mitad_caca-1 && actual)
+				while(conta_caca<mitad_caca && actual)
 				{
 					actual=actual->next;
 					conta_caca++;
 				}
-				mediano_par=actual->key;
-				caca_log_debug("el medi ano par  %d (%u)", mediano_par, mitad_caca-2);
-				puta=(tipo_dato)mediano+(tipo_dato)mediano_par;
-			}
-			else
-			{
-				puta=(tipo_dato)mediano*2;
+				mediano=actual->key;
+				caca_log_debug("el medi ano %d (%u) el tam caca %u ", mediano, mitad_caca-1,tam_caca);
+				if(!(tam_caca%2))
+				{
+					actual = head;
+					conta_caca=0;
+					while(conta_caca<mitad_caca-1 && actual)
+					{
+						actual=actual->next;
+						conta_caca++;
+					}
+					mediano_par=actual->key;
+					caca_log_debug("el medi ano par  %d (%u)", mediano_par, mitad_caca-2);
+					puta=(tipo_dato)mediano+(tipo_dato)mediano_par;
+				}
+				else
+				{
+					puta=(tipo_dato)mediano*2;
+				}
 			}
 		}
-	}
-	else
-	{
-		puta=MEDIA_MIERDA_VALOR_INVALIDO;
-	}
+		else
+		{
+			puta=MEDIA_MIERDA_VALOR_INVALIDO;
+		}
 //	sleep(2);
-	assert_timeout(puta==resul);
+		assert_timeout(puta==resul);
 #endif
-
 
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
 			if (resul % 2) {
-				printf("%.1f\n", resul_bueno);
+//				printf("%.1f\n", resul_bueno);
 			} else {
-				printf("%.0f\n", resul_bueno);
+//				printf("%.0f\n", resul_bueno);
 			}
 		} else {
-			printf("Wrong!\n");
+//			printf("Wrong!\n");
 		}
 		i++;
 	}
