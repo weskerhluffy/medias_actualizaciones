@@ -81,6 +81,44 @@ typedef enum BOOLEANOS {
 
 void caca_log_debug_func(const char *format, ...);
 
+#define caca_comun_mapa_bitch_checa(bits, posicion, resultado) \
+        __asm__ (\
+                        "xor %%rdx,%%rdx\n"\
+                        "movq %[bitch_posi],%%rax\n"\
+                        "movq $64,%%r8\n"\
+                        "divq %%r8\n"\
+                        "mov $1,%[resul]\n"\
+                        "mov %%rdx,%%rcx\n"\
+                        "shlq %%cl,%[resul]\n"\
+                        "and (%[vectors],%%rax,8),%[resul]\n"\
+                        : [resul] "=b" (resultado)\
+                        : [bitch_posi] "r" (posicion), [vectors] "r" (bits)\
+            :"rax","rdx","rcx","r8")
+
+static inline void caca_comun_mapa_bitch_asigna(bitch_vector *bits,
+		unsigned long posicion) {
+	int idx_arreglo = 0;
+	int idx_registro = 0;
+
+	idx_arreglo = posicion / 64;
+	idx_registro = posicion % 64;
+
+	bits[idx_arreglo] |= (bitch_vector) ((bitch_vector) 1 << idx_registro);
+
+}
+
+static inline void caca_comun_mapa_bitch_limpia(bitch_vector *bits,
+		unsigned long posicion) {
+	int idx_arreglo = 0;
+	int idx_registro = 0;
+
+	idx_arreglo = posicion / 64;
+	idx_registro = posicion % 64;
+
+	bits[idx_arreglo] &= (bitch_vector) ~((bitch_vector) 1 << idx_registro);
+
+}
+
 #define MEDIA_MIERDA_MAX_OPERACIONES 100000
 #define MEDIA_MIERDA_MAX_ELEMENTOS_INPUT MEDIA_MIERDA_MAX_OPERACIONES
 #define MEDIA_MIERDA_MAX_VALOR INT_MAX
@@ -114,6 +152,9 @@ struct avl_tree_s {
 	natural *nodos_libres_idx;
 	unsigned long siguiente_idx_para_usar;
 	unsigned long ultimo_idx_anadido;
+	bitch_vector mapa_recorridos[(MEDIA_MIERDA_MAX_OPERACIONES * 2)
+			/ (sizeof(bitch_vector) * 8)];
+	natural numeros_marcados[MEDIA_MIERDA_MAX_OPERACIONES];
 };
 
 typedef struct avl_tree_s avl_tree_t;
@@ -614,12 +655,6 @@ static inline void avl_tree_iterador_fini(avl_tree_iterator_t *iter) {
 	free(iter->contador_visitas);
 }
 
-static inline bool avl_tree_iterador_hay_siguiente(avl_tree_iterator_t *iter) {
-	return !(iter->nodo_actual == iter->arbolin->root
-			&& iter->contador_visitas[iter->arbolin->root->indice_en_arreglo]
-					== 2);
-}
-
 static inline avl_tree_node_t* avl_tree_iterador_siguiente(
 		avl_tree_iterator_t *iter) {
 	int contador_actual = 0;
@@ -1106,6 +1141,126 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 	}
 }
 
+static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
+		avl_tree_t *arbolin, avl_tree_node_t *nodo_actual,
+		natural brinca_pa_tras) {
+	bitch_vector *mapa_recorridos = arbolin->mapa_recorridos;
+	natural *numeros_marcados = arbolin->numeros_marcados;
+	natural num_numeros_marcados = -1;
+	avl_tree_node_t *nodo_sig = NULL;
+	tipo_dato bitch_resu = 0;
+	tipo_dato num_marcado = 0;
+
+	nodo_sig = nodo_actual;
+	while (nodo_sig) {
+		boolean hay_izq = falso;
+		num_marcado = nodo_sig->indice_en_arreglo;
+		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
+		if (!bitch_resu) {
+			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
+			numeros_marcados[num_numeros_marcados++] = num_marcado;
+			if (num_numeros_marcados == brinca_pa_tras) {
+				break;
+			}
+		}
+
+		if (nodo_sig->left) {
+			caca_comun_mapa_bitch_checa(mapa_recorridos,
+					nodo_sig->left->indice_en_arreglo, bitch_resu);
+			hay_izq = !!bitch_resu;
+		}
+
+		if (hay_izq) {
+			nodo_sig = nodo_sig->left;
+			while (nodo_sig->right) {
+				nodo_sig = nodo_sig->right;
+			}
+		} else {
+			nodo_sig = nodo_sig->padre;
+			while (nodo_sig) {
+				caca_comun_mapa_bitch_checa(mapa_recorridos,
+						nodo_sig->padre->indice_en_arreglo, bitch_resu);
+
+				if (!bitch_resu) {
+					break;
+				}
+				nodo_sig = nodo_sig->padre;
+			}
+		}
+
+	}
+
+	for (int i = 0; i <= num_numeros_marcados; i++) {
+		num_marcado = numeros_marcados[i];
+		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
+		assert_timeout(bitch_resu);
+
+		caca_comun_mapa_bitch_limpia(mapa_recorridos, num_marcado);
+	}
+
+	return nodo_sig;
+}
+
+static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
+		avl_tree_t *arbolin, avl_tree_node_t *nodo_actual,
+		natural brinca_pa_tras) {
+	bitch_vector *mapa_recorridos = arbolin->mapa_recorridos;
+	natural *numeros_marcados = arbolin->numeros_marcados;
+	natural num_numeros_marcados = -1;
+	avl_tree_node_t *nodo_sig = NULL;
+	tipo_dato bitch_resu = 0;
+	tipo_dato num_marcado = 0;
+
+	nodo_sig = nodo_actual;
+	while (nodo_sig) {
+		boolean hay_izq = falso;
+		num_marcado = nodo_sig->indice_en_arreglo;
+		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
+		if (!bitch_resu) {
+			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
+			numeros_marcados[num_numeros_marcados++] = num_marcado;
+			if (num_numeros_marcados == brinca_pa_tras) {
+				break;
+			}
+		}
+
+		if (nodo_sig->right) {
+			caca_comun_mapa_bitch_checa(mapa_recorridos,
+					nodo_sig->right->indice_en_arreglo, bitch_resu);
+			hay_izq = !!bitch_resu;
+		}
+
+		if (hay_izq) {
+			nodo_sig = nodo_sig->right;
+			while (nodo_sig->left) {
+				nodo_sig = nodo_sig->left;
+			}
+		} else {
+			nodo_sig = nodo_sig->padre;
+			while (nodo_sig) {
+				caca_comun_mapa_bitch_checa(mapa_recorridos,
+						nodo_sig->padre->indice_en_arreglo, bitch_resu);
+
+				if (!bitch_resu) {
+					break;
+				}
+				nodo_sig = nodo_sig->padre;
+			}
+		}
+
+	}
+
+	for (int i = 0; i <= num_numeros_marcados; i++) {
+		num_marcado = numeros_marcados[i];
+		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
+		assert_timeout(bitch_resu);
+
+		caca_comun_mapa_bitch_limpia(mapa_recorridos, num_marcado);
+	}
+
+	return nodo_sig;
+}
+
 #endif
 
 #if 1
@@ -1126,7 +1281,7 @@ void printList() {
 	struct node *ptr = head;
 	caca_log_debug("imprimiendo lista");
 
-	//start from the beginning
+//start from the beginning
 	while (ptr != NULL) {
 		caca_log_debug("(%d,%d) ", ptr->key, ptr->data);
 		ptr = ptr->next;
@@ -1136,29 +1291,29 @@ void printList() {
 
 //insert link at the first location
 void insertFirst(int key, int data) {
-	//create a link
+//create a link
 	struct node *link = (struct node*) malloc(sizeof(struct node));
 
 	link->key = key;
 	link->data = data;
 
-	//point it to old first node
+//point it to old first node
 	link->next = head;
 
-	//point first to new first node
+//point first to new first node
 	head = link;
 }
 
 //delete first item
 struct node* deleteFirst() {
 
-	//save reference to first link
+//save reference to first link
 	struct node *tempLink = head;
 
-	//mark next to first link as first
+//mark next to first link as first
 	head = head->next;
 
-	//return the deleted link
+//return the deleted link
 	return tempLink;
 }
 
@@ -1181,15 +1336,15 @@ int length() {
 //find a link with given key
 struct node* find(int key) {
 
-	//start from the first link
+//start from the first link
 	struct node* current = head;
 
-	//if list is empty
+//if list is empty
 	if (head == NULL) {
 		return NULL;
 	}
 
-	//navigate through list
+//navigate through list
 	while (current->key != key) {
 
 		//if it is last node
@@ -1201,23 +1356,23 @@ struct node* find(int key) {
 		}
 	}
 
-	//if data found, return the current Link
+//if data found, return the current Link
 	return current;
 }
 
 //delete a link with given key
 struct node* delete(int key) {
 
-	//start from the first link
+//start from the first link
 	struct node* current = head;
 	struct node* previous = NULL;
 
-	//if list is empty
+//if list is empty
 	if (head == NULL) {
 		return NULL;
 	}
 
-	//navigate through list
+//navigate through list
 	while (current->key != key) {
 
 		//if it is last node
@@ -1231,7 +1386,7 @@ struct node* delete(int key) {
 		}
 	}
 
-	//found a match, update the link
+//found a match, update the link
 	if (current == head) {
 		//change first to point to next link
 		head = head->next;
@@ -1300,7 +1455,7 @@ main() {
 
 	printf("Original List: ");
 
-	//print list
+//print list
 	printList();
 
 	while(!isEmpty()) {
@@ -1806,7 +1961,7 @@ void media_mierda_main() {
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
 			if (resul % 2) {
 				printf("%.1f\n", resul_bueno);
-		} else {
+			} else {
 				printf("%.0f\n", resul_bueno);
 			}
 		} else {
