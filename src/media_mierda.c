@@ -1805,12 +1805,12 @@ void media_mierda_main() {
 
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
 			if (resul % 2) {
-//				printf("%.1f\n", resul_bueno);
-			} else {
-//				printf("%.0f\n", resul_bueno);
+				printf("%.1f\n", resul_bueno);
+		} else {
+				printf("%.0f\n", resul_bueno);
 			}
 		} else {
-//			printf("Wrong!\n");
+			printf("Wrong!\n");
 		}
 		i++;
 	}
