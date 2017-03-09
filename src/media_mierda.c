@@ -84,7 +84,7 @@ void caca_log_debug_func(const char *format, ...);
 #define caca_comun_mapa_bitch_checa(bits, posicion, resultado) \
         __asm__ (\
                         "xor %%rdx,%%rdx\n"\
-                        "movq %[bitch_posi],%%rax\n"\
+                        "movq %[bitch_posi],%%rax\n" \
                         "movq $64,%%r8\n"\
                         "divq %%r8\n"\
                         "mov $1,%[resul]\n"\
@@ -1146,28 +1146,30 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 		natural brinca_pa_tras) {
 	bitch_vector *mapa_recorridos = arbolin->mapa_recorridos;
 	natural *numeros_marcados = arbolin->numeros_marcados;
-	natural num_numeros_marcados = -1;
-	avl_tree_node_t *nodo_sig = NULL;
-	tipo_dato bitch_resu = 0;
-	tipo_dato num_marcado = 0;
+	natural num_numeros_marcados = 0;
+	avl_tree_node_t *nodo_sig;
+	tipo_dato bitch_resu ;
+	tipo_dato num_marcado ;
 
 	nodo_sig = nodo_actual;
 	while (nodo_sig) {
-		boolean hay_izq = falso;
+		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
 		if (!bitch_resu) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
-			numeros_marcados[num_numeros_marcados++] = num_marcado;
+			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
+				num_numeros_marcados++;
 				break;
 			}
+			num_numeros_marcados++;
 		}
 
 		if (nodo_sig->left) {
 			caca_comun_mapa_bitch_checa(mapa_recorridos,
-					nodo_sig->left->indice_en_arreglo, bitch_resu);
-			hay_izq = !!bitch_resu;
+					(tipo_dato)nodo_sig->left->indice_en_arreglo, bitch_resu);
+			hay_izq = bitch_resu==0;
 		}
 
 		if (hay_izq) {
@@ -1179,7 +1181,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
-						nodo_sig->padre->indice_en_arreglo, bitch_resu);
+						(tipo_dato)nodo_sig->indice_en_arreglo, bitch_resu);
 
 				if (!bitch_resu) {
 					break;
@@ -1190,7 +1192,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 
 	}
 
-	for (int i = 0; i <= num_numeros_marcados; i++) {
+	for (int i = 0; i < num_numeros_marcados; i++) {
 		num_marcado = numeros_marcados[i];
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
 		assert_timeout(bitch_resu);
@@ -1213,21 +1215,23 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 
 	nodo_sig = nodo_actual;
 	while (nodo_sig) {
-		boolean hay_izq = falso;
+		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
 		if (!bitch_resu) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
-			numeros_marcados[num_numeros_marcados++] = num_marcado;
+			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
+				num_numeros_marcados++;
 				break;
 			}
+			num_numeros_marcados++;
 		}
 
 		if (nodo_sig->right) {
 			caca_comun_mapa_bitch_checa(mapa_recorridos,
 					nodo_sig->right->indice_en_arreglo, bitch_resu);
-			hay_izq = !!bitch_resu;
+			hay_izq = bitch_resu==0;
 		}
 
 		if (hay_izq) {
@@ -1770,20 +1774,15 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		if (pos_raiz >= pos_mierdia) {
 			cargado_izq = verdadero;
 			desfase = pos_raiz - pos_mierdia;
+			printf("recorriendo a la izq desfase %u\n", desfase);
 			caca_log_debug("recorriendo a la izq desfase %u", desfase);
 
-			i = 0;
-			while (i <= desfase) {
-				nodo = avl_tree_iterador_anterior(iter);
-				caca_log_debug("recorriendo %d", nodo->llave);
-				i++;
-			}
-			nodo = avl_tree_iterador_obtener_actual(iter);
+			nodo = avl_tree_nodo_posicion_anterior( arbolin, arbolin->root, desfase);
 			mierdia = nodo->llave;
 			caca_log_debug("la mierdia es %d", mierdia);
 
 			if (!(num_cacas % 2)) {
-				nodo = avl_tree_iterador_anterior(iter);
+				nodo = avl_tree_nodo_posicion_anterior( arbolin, nodo, 1);
 				mierdia_par = nodo->llave;
 				caca_log_debug("la mierdia par %d", mierdia_par);
 				hubo_par = verdadero;
