@@ -11,7 +11,7 @@ br s -l 2183 -c "cont_queries==761"
 #settings set target.run-args < caca3.txt
 #settings set target.run-args < caca4.txt
 #settings set target.run-args < caca5.txt
-settings set target.run-args < caca6.txt
+#settings set target.run-args < caca6.txt
 #settings set target.run-args < caca_grande.txt
 #settings set target.run-args < /tmp/como.txt
 #settings set target.run-args < /tmp/como_rev.txt
@@ -22,3 +22,5 @@ settings set target.run-args < caca6.txt
 #settings set target.run-args < caca_grande_random_negativos_1.txt
 #settings set target.run-args < caca7.txt
 #settings set target.run-args < caca_shame_6.txt
+#settings set target.run-args < caca10.txt
+settings set target.run-args < caca11.txt

@@ -1141,6 +1141,15 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 	}
 }
 
+static inline bool avl_tree_es_hijo_perra(avl_tree_node_t *nodo) {
+	bool es_hijo_perra = falso;
+
+	if (nodo->padre && nodo->padre->left == nodo) {
+		es_hijo_perra == verdadero;
+	}
+
+	return es_hijo_perra;
+}
 static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 		avl_tree_t *arbolin, avl_tree_node_t *nodo_actual,
 		natural brinca_pa_tras) {
@@ -1208,7 +1217,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 		natural brinca_pa_tras) {
 	bitch_vector *mapa_recorridos = arbolin->mapa_recorridos;
 	natural *numeros_marcados = arbolin->numeros_marcados;
-	natural num_numeros_marcados = -1;
+	natural num_numeros_marcados = 0;
 	avl_tree_node_t *nodo_sig = NULL;
 	tipo_dato bitch_resu = 0;
 	tipo_dato num_marcado = 0;
@@ -1230,7 +1239,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 
 		if (nodo_sig->right) {
 			caca_comun_mapa_bitch_checa(mapa_recorridos,
-					nodo_sig->right->indice_en_arreglo, bitch_resu);
+					(tipo_dato)nodo_sig->right->indice_en_arreglo, bitch_resu);
 			hay_izq = bitch_resu == 0;
 		}
 
@@ -1243,7 +1252,8 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
-						nodo_sig->padre->indice_en_arreglo, bitch_resu);
+						(tipo_dato)nodo_sig->padre->indice_en_arreglo,
+						bitch_resu);
 
 				if (!bitch_resu) {
 					break;
@@ -1254,7 +1264,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 
 	}
 
-	for (int i = 0; i <= num_numeros_marcados; i++) {
+	for (int i = 0; i < num_numeros_marcados; i++) {
 		num_marcado = numeros_marcados[i];
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
 		assert_timeout(bitch_resu);
@@ -1709,10 +1719,20 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 
 	if (arbolin->root) {
 		num_cacas = arbolin->root->num_decendientes + 1;
-		if (numerin_largo < arbolin->root->llave) {
+		if (numerin_largo
+				< (nodo_verga ? nodo_verga->llave : arbolin->root->llave)) {
 			ope_izq = verdadero;
 		} else {
-			ope_izq = falso;
+			if (numerin_largo
+					> (nodo_verga ? nodo_verga->llave : arbolin->root->llave)) {
+				ope_izq = falso;
+			} else {
+				if (anadir) {
+					ope_izq = falso;
+				} else {
+					ope_izq = verdadero;
+				}
+			}
 		}
 	}
 	assert_timeout(arbolin->nodos_realmente_en_arbol == num_cacas);
@@ -1720,7 +1740,8 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 	caca_log_debug("%s el num %d(%u)", anadir?"poniendo":"quitando", numerin,
 			idx);
 	caca_log_debug("numde cacas original %u", num_cacas);
-	ope_par = ((num_cacas - 1) & 1) == 0;
+	ope_par = ((num_cacas + (anadir ? 1 : (-1))) & 1) == 0;
+	caca_log_debug("es una ope par %u ope izq %u", ope_par, ope_izq);
 	if (anadir) {
 		avl_tree_insert(arbolin, (tipo_dato) numerin_largo, idx);
 		se_hizo_algo = verdadero;
@@ -1729,29 +1750,40 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 		avl_tree_validar_alv(arbolin);
 		memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
 #endif
-		if (ope_par && |ope_izq) {
-			mover_mierdia = verdadero;
-			mover_izq = falso;
-		}
-		if (!ope_par && ope_izq) {
-			mover_mierdia = verdadero;
-			mover_izq = verdadero;
-		}
-		if (mover_mierdia) {
-			if (mover_izq) {
-				nodo = avl_tree_nodo_posicion_anterior(arbolin, arbolin->root,
-						1);
-			} else {
-				nodo = avl_tree_nodo_posicion_siguiente(arbolin, arbolin->root,
-						1);
+		if (num_cacas == 1) {
+			nodo_verga = arbolin->root;
+			caca_log_debug("unico nodo verga %d", nodo_verga->llave);
+		} else {
+			if (ope_par && !ope_izq) {
+				mover_mierdia = verdadero;
+				mover_izq = falso;
 			}
-			nodo_verga = nodo;
+			if (!ope_par && ope_izq) {
+				mover_mierdia = verdadero;
+				mover_izq = verdadero;
+			}
+			if (mover_mierdia) {
+				if (mover_izq) {
+					caca_log_debug("moviendo medi ano a la izq");
+					nodo = avl_tree_nodo_posicion_anterior(arbolin, nodo_verga,
+							1);
+				} else {
+					caca_log_debug("moviendo medi ano a la der");
+					nodo = avl_tree_nodo_posicion_siguiente(arbolin, nodo_verga,
+							1);
+				}
+				caca_log_debug("nodo verga anterior %d %u, nuevo %d %u",
+						nodo_verga->llave, nodo_verga->pasajero_oscuro,
+						nodo->llave, nodo->pasajero_oscuro);
+				nodo_verga = nodo;
+			}
 		}
 	} else {
 		if (arbolin->nodos_realmente_en_arbol > 1
 				&& (avl_tree_find(arbolin, numerin_largo,
 						AVL_TREE_VALOR_INVALIDO))) {
-			if (!ope_par && |ope_izq) {
+			avl_tree_node_t nodo_caca = { 0 };
+			if (!ope_par && !ope_izq) {
 				mover_mierdia = verdadero;
 				mover_izq = verdadero;
 			}
@@ -1761,15 +1793,39 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 			if (mover_mierdia) {
 				if (mover_izq) {
-					nodo = avl_tree_nodo_posicion_anterior(arbolin,
-							arbolin->root, 1);
+					caca_log_debug("moviendo medi ano a la izq");
+					nodo = avl_tree_nodo_posicion_anterior(arbolin, nodo_verga,
+							1);
 				} else {
-					nodo = avl_tree_nodo_posicion_siguiente(arbolin,
-							arbolin->root, 1);
+					caca_log_debug("moviendo medi ano a la der");
+					nodo = avl_tree_nodo_posicion_siguiente(arbolin, nodo_verga,
+							1);
 				}
-				nodo_verga = nodo;
+				caca_log_debug("nodo verga anterior %d %u, nuevo %d %u",
+						nodo_verga->llave, nodo_verga->pasajero_oscuro,
+						nodo->llave, nodo->pasajero_oscuro);
+			} else {
+				nodo = nodo_verga;
 			}
+			nodo_caca = *nodo;
 			avl_tree_borrar(arbolin, numerin_largo);
+			if (!((num_cacas - 1) == 1)) {
+				nodo_verga = arbolin->root;
+			} else {
+				if ((num_cacas - 1) == 2) {
+					if (arbolin->root->right) {
+						nodo_verga = arbolin->root->right;
+						;
+					} else {
+						nodo_verga = arbolin->root;
+					}
+				} else {
+					nodo_verga = avl_tree_find(arbolin, nodo_caca.llave,
+							nodo_caca.pasajero_oscuro);
+				}
+			}
+			caca_log_debug("despues de borrar el nodo verga %u",
+					nodo_verga->llave);
 			se_hizo_algo = verdadero;
 			num_cacas--;
 #ifdef CACA_COMUN_VALIDA
@@ -1783,123 +1839,23 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 	assert_timeout(arbolin->nodos_realmente_en_arbol == num_cacas);
 
 	if (se_hizo_algo) {
-		if (anadir) {
-
-		}
-	}
-
-	if (se_hizo_algo) {
-		bool cargado_izq = falso;
-		bool hubo_par = falso;
-		natural pos_mierdia = num_cacas >> 1;
-		natural pos_raiz = 0;
-		natural desfase = 0;
-		int mierdia = 0;
-		int mierdia_par = 0;
-		natural i = 0;
-		avl_tree_iterator_t *iter = &(avl_tree_iterator_t ) { 0 };
-
-		if (num_cacas == 1) {
-			caca_log_debug("solo 1 elem, root %d", arbolin->root->llave);
-			nodo_verga = arbolin->root;
-			return arbolin->root->llave * 2;
-		}
-		if (num_cacas == 2) {
-			mierdia = arbolin->root->llave;
-			caca_log_debug("solo 2 elems, root %d", arbolin->root->llave);
-			if (arbolin->root->left) {
-				mierdia_par = arbolin->root->left->llave;
-				nodo_verga = arbolin->root;
-			} else {
-				mierdia_par = arbolin->root->right->llave;
-				nodo_verga = arbolin->root->right;
+		avl_tree_node_t *nodo_par = NULL;
+		if (ope_par) {
+			caca_log_debug("obteniendo el de la izq d %d %u", nodo_verga->llave,
+					nodo_verga->pasajero_oscuro);
+			nodo_par = avl_tree_nodo_posicion_anterior(arbolin, nodo_verga, 1);
+			caca_log_debug("el nodo par d %d %u", nodo_par->llave,
+					nodo_par->pasajero_oscuro);
+			if (num_cacas == 2 && !nodo_par) {
+				nodo_par = avl_tree_nodo_posicion_siguiente(arbolin, nodo_verga,
+						1);
 			}
-			caca_log_debug("solo 2 elems, par %d", mierdia_par);
-			tipo_dato crap = (tipo_dato) mierdia + (tipo_dato) mierdia_par;
-			caca_log_debug("suma mierda %lld", crap);
-
-			return crap;
-		}
-
-		avl_tree_iterador_ini(arbolin, iter);
-
-		if (!ope_par && ((ope_izq && anadir) || (ope_der && !anadir))) {
-
-		}
-
-		if (arbolin->root->left) {
-			pos_raiz = arbolin->root->left->num_decendientes + 1;
-		}
-		caca_log_debug("la pos raiz %u, pos mierdia %u, num cacas %u", pos_raiz,
-				pos_mierdia, num_cacas);
-
-		if (pos_raiz >= pos_mierdia) {
-			cargado_izq = verdadero;
-			desfase = pos_raiz - pos_mierdia;
-			printf("recorriendo a la izq desfase %u\n", desfase);
-			caca_log_debug("recorriendo a la izq desfase %u", desfase);
-
-			nodo = avl_tree_nodo_posicion_anterior(arbolin, arbolin->root,
-					desfase);
-			mierdia = nodo->llave;
-			caca_log_debug("la mierdia es %d", mierdia);
-
-			if (!(num_cacas % 2)) {
-				nodo = avl_tree_nodo_posicion_anterior(arbolin, nodo, 1);
-				mierdia_par = nodo->llave;
-				caca_log_debug("la mierdia par %d", mierdia_par);
-				hubo_par = verdadero;
-			}
-
-			if (hubo_par) {
-				mierdia_al_doble = (tipo_dato) mierdia
-						+ (tipo_dato) mierdia_par;
-			} else {
-				mierdia_al_doble = (tipo_dato) mierdia * 2;
-			}
+			mierdia_al_doble = nodo_verga->llave + nodo_par->llave;
 		} else {
-			int factor_correccion_idx_par = 0;
-			cargado_izq = falso;
-			desfase = pos_mierdia - pos_raiz;
-
-			caca_log_debug("recorriendo a la der desfase %u", desfase);
-
-			if (!(num_cacas % 2)) {
-				hubo_par = verdadero;
-				factor_correccion_idx_par = -1;
-			}
-			caca_log_debug("factor de correccion par %d",
-					factor_correccion_idx_par);
-
-			i = 0;
-			while (i <= desfase + factor_correccion_idx_par) {
-				nodo = avl_tree_iterador_siguiente(iter);
-				caca_log_debug("recorriendo %d", nodo->llave);
-				i++;
-			}
-			nodo = avl_tree_iterador_obtener_actual(iter);
-			mierdia = nodo->llave;
-			caca_log_debug("la mierdia es %d", mierdia);
-
-			if (hubo_par) {
-				nodo = avl_tree_iterador_siguiente(iter);
-				mierdia_par = nodo->llave;
-				caca_log_debug("la mierdia par %d", mierdia_par);
-				hubo_par = verdadero;
-			}
-
-			if (hubo_par) {
-				mierdia_al_doble = (tipo_dato) mierdia
-						+ (tipo_dato) mierdia_par;
-			} else {
-				mierdia_al_doble = (tipo_dato) mierdia * 2;
-			}
+			mierdia_al_doble = nodo_verga->llave * 2;
 		}
-
-		caca_log_debug("la mierda doble %d", mierdia_al_doble);
-
-		avl_tree_iterador_fini(iter);
 	}
+
 	return mierdia_al_doble;
 }
 
