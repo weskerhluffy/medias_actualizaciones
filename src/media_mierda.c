@@ -56,7 +56,7 @@ typedef enum BOOLEANOS {
 #define assert_timeout(condition) assert(condition);
 #endif
 #if CACA_COMUN_TIPO_ASSERT == CACA_COMUN_ASSERT_SUAVECITO
-#define assert_timeout(condition) if(!(condition)){sleep(2);abort();}
+#define assert_timeout(condition) if(!(condition)){sleep(10);abort();}
 #endif
 #if CACA_COMUN_TIPO_ASSERT == CACA_COMUN_ASSERT_NIMADRES
 #define assert_timeout(condition) 0
@@ -966,6 +966,9 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 			if (pasajero_oscuro == AVL_TREE_VALOR_INVALIDO) {
 				if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
 					if (root->left == NULL || root->right == NULL) {
+						caca_log_debug(
+								"el nodo q si c va ALV %d %u",
+								root->llave,root->pasajero_oscuro);
 						avl_tree_node_t *temp =
 								root->left ? root->left : root->right;
 
@@ -1005,6 +1008,9 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 								arbolini->nodos_realmente_en_arbol);
 
 					} else {
+						caca_log_debug(
+								"el nodo q c va ALV cpm des,adre %d %u",
+								root->llave,root->pasajero_oscuro);
 						avl_tree_node_t *temp = avl_tree_siguiente_nodo_inorder(
 								root->right);
 
@@ -1036,6 +1042,9 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 
 						if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
 							if (root->left == NULL || root->right == NULL) {
+						caca_log_debug(
+								"el nodo q si c va ALV %d %u",
+								root->llave,root->pasajero_oscuro);
 								avl_tree_node_t *temp =
 										root->left ? root->left : root->right;
 
@@ -1074,6 +1083,9 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 										arbolini->nodos_realmente_en_arbol);
 
 							} else {
+						caca_log_debug(
+								"el nodo q c va ALV con desmadre %d %u",
+								root->llave,root->pasajero_oscuro);
 								avl_tree_node_t *temp =
 										avl_tree_siguiente_nodo_inorder(
 												root->right);
@@ -1125,7 +1137,7 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 	return root;
 }
 
-void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
+void avl_tree_borrar(avl_tree_t *tree, tipo_dato value, tipo_dato pasajero_oscuro) {
 
 	avl_tree_node_t *newroot = NULL;
 	caca_log_debug("borrando valor %d", value);
@@ -1134,7 +1146,7 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 		return;
 	}
 	newroot = avl_tree_nodo_borrar(tree, tree->root, value, falso,
-			AVL_TREE_VALOR_INVALIDO);
+			pasajero_oscuro);
 
 	if (newroot != tree->root) {
 		tree->root = newroot;
@@ -1144,9 +1156,13 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value) {
 static inline bool avl_tree_es_hijo_perra(avl_tree_node_t *nodo) {
 	bool es_hijo_perra = falso;
 
-	if (nodo->padre && nodo->padre->left == nodo) {
-		es_hijo_perra == verdadero;
-	}
+	caca_log_debug("tonig padre %p nodo left %p nodo act %p",nodo->padre,nodo->padre?nodo->padre->left:NULL,nodo);
+	if (nodo->padre){
+	caca_log_debug("tiene padre");
+	if ((tipo_dato)nodo->padre->left == (tipo_dato)nodo) {
+	caca_log_debug("es ijo izq");
+		es_hijo_perra = verdadero;
+	}}
 
 	return es_hijo_perra;
 }
@@ -1165,7 +1181,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
-		if (!bitch_resu) {
+		if (bitch_resu==0) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
 			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
@@ -1187,14 +1203,16 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 				nodo_sig = nodo_sig->right;
 			}
 		} else {
+			avl_tree_node_t *last_of_us=nodo_sig;
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
 						(tipo_dato)nodo_sig->indice_en_arreglo, bitch_resu);
 
-				if (!bitch_resu) {
+				if (bitch_resu==0 && !avl_tree_es_hijo_perra(last_of_us)) {
 					break;
 				}
+				last_of_us=nodo_sig;
 				nodo_sig = nodo_sig->padre;
 			}
 		}
@@ -1227,7 +1245,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
-		if (!bitch_resu) {
+		if (bitch_resu==0) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
 			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
@@ -1249,15 +1267,17 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 				nodo_sig = nodo_sig->left;
 			}
 		} else {
+			avl_tree_node_t *last_of_us=nodo_sig;
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
-						(tipo_dato)nodo_sig->padre->indice_en_arreglo,
+						(tipo_dato)nodo_sig->indice_en_arreglo,
 						bitch_resu);
 
-				if (!bitch_resu) {
+				if (bitch_resu==0 && avl_tree_es_hijo_perra(last_of_us)) {
 					break;
 				}
+				last_of_us=nodo_sig;
 				nodo_sig = nodo_sig->padre;
 			}
 		}
@@ -1595,6 +1615,8 @@ void caca_log_debug_func(const char *format, ...) {
 	vprintf(formato, arg2);
 	va_end(arg2);
 	va_end(arg);
+// XXX: http://stackoverflow.com/questions/1716296/why-does-printf-not-flush-after-the-call-unless-a-newline-is-in-the-format-strin
+	setbuf(stdout, NULL);
 }
 static char *caca_comun_arreglo_a_cadena(tipo_dato *arreglo, int tam_arreglo,
 		char *buffer) {
@@ -1783,6 +1805,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 				&& (avl_tree_find(arbolin, numerin_largo,
 						AVL_TREE_VALOR_INVALIDO))) {
 			avl_tree_node_t nodo_caca = { 0 };
+			tipo_dato pasajero_oscuro_a_borrar=AVL_TREE_VALOR_INVALIDO;
 			if (!ope_par && !ope_izq) {
 				mover_mierdia = verdadero;
 				mover_izq = verdadero;
@@ -1790,6 +1813,19 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			if (ope_par && ope_izq) {
 				mover_mierdia = verdadero;
 				mover_izq = falso;
+			}
+			if(numerin_largo==nodo_verga->llave)
+			{
+				pasajero_oscuro_a_borrar = nodo_verga->pasajero_oscuro;
+				mover_mierdia = verdadero;
+				if(ope_par)
+				{
+					mover_izq = falso;
+				}
+				else
+				{
+					mover_izq = verdadero;
+				}
 			}
 			if (mover_mierdia) {
 				if (mover_izq) {
@@ -1808,8 +1844,12 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 				nodo = nodo_verga;
 			}
 			nodo_caca = *nodo;
-			avl_tree_borrar(arbolin, numerin_largo);
-			if (!((num_cacas - 1) == 1)) {
+			avl_tree_borrar(arbolin, numerin_largo, pasajero_oscuro_a_borrar);
+#ifdef CACA_COMUN_VALIDA
+			avl_tree_validar_alv(arbolin);
+			memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
+#endif
+			if ((num_cacas - 1) == 1) {
 				nodo_verga = arbolin->root;
 			} else {
 				if ((num_cacas - 1) == 2) {
@@ -1824,14 +1864,11 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 							nodo_caca.pasajero_oscuro);
 				}
 			}
+
 			caca_log_debug("despues de borrar el nodo verga %u",
 					nodo_verga->llave);
 			se_hizo_algo = verdadero;
 			num_cacas--;
-#ifdef CACA_COMUN_VALIDA
-			avl_tree_validar_alv(arbolin);
-			memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
-#endif
 		}
 	}
 	caca_log_debug("se izo algo %u %s aora num cacas %u", se_hizo_algo,
