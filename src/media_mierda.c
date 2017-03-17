@@ -966,9 +966,8 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 			if (pasajero_oscuro == AVL_TREE_VALOR_INVALIDO) {
 				if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
 					if (root->left == NULL || root->right == NULL) {
-						caca_log_debug(
-								"el nodo q si c va ALV %d %u",
-								root->llave,root->pasajero_oscuro);
+						caca_log_debug("el nodo q si c va ALV %d %u",
+								root->llave, root->pasajero_oscuro);
 						avl_tree_node_t *temp =
 								root->left ? root->left : root->right;
 
@@ -1008,9 +1007,8 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 								arbolini->nodos_realmente_en_arbol);
 
 					} else {
-						caca_log_debug(
-								"el nodo q c va ALV cpm des,adre %d %u",
-								root->llave,root->pasajero_oscuro);
+						caca_log_debug("el nodo q c va ALV cpm des,adre %d %u",
+								root->llave, root->pasajero_oscuro);
 						avl_tree_node_t *temp = avl_tree_siguiente_nodo_inorder(
 								root->right);
 
@@ -1042,9 +1040,8 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 
 						if ((root->ocurrencias - 1) == 0 || ignora_conteo) {
 							if (root->left == NULL || root->right == NULL) {
-						caca_log_debug(
-								"el nodo q si c va ALV %d %u",
-								root->llave,root->pasajero_oscuro);
+								caca_log_debug("el nodo q si c va ALV %d %u",
+										root->llave, root->pasajero_oscuro);
 								avl_tree_node_t *temp =
 										root->left ? root->left : root->right;
 
@@ -1083,9 +1080,9 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 										arbolini->nodos_realmente_en_arbol);
 
 							} else {
-						caca_log_debug(
-								"el nodo q c va ALV con desmadre %d %u",
-								root->llave,root->pasajero_oscuro);
+								caca_log_debug(
+										"el nodo q c va ALV con desmadre %d %u",
+										root->llave, root->pasajero_oscuro);
 								avl_tree_node_t *temp =
 										avl_tree_siguiente_nodo_inorder(
 												root->right);
@@ -1137,7 +1134,8 @@ static inline avl_tree_node_t *avl_tree_nodo_borrar(avl_tree_t *arbolini,
 	return root;
 }
 
-void avl_tree_borrar(avl_tree_t *tree, tipo_dato value, tipo_dato pasajero_oscuro) {
+void avl_tree_borrar(avl_tree_t *tree, tipo_dato value,
+		tipo_dato pasajero_oscuro) {
 
 	avl_tree_node_t *newroot = NULL;
 	caca_log_debug("borrando valor %d", value);
@@ -1156,13 +1154,15 @@ void avl_tree_borrar(avl_tree_t *tree, tipo_dato value, tipo_dato pasajero_oscur
 static inline bool avl_tree_es_hijo_perra(avl_tree_node_t *nodo) {
 	bool es_hijo_perra = falso;
 
-	caca_log_debug("tonig padre %p nodo left %p nodo act %p",nodo->padre,nodo->padre?nodo->padre->left:NULL,nodo);
-	if (nodo->padre){
-	caca_log_debug("tiene padre");
-	if ((tipo_dato)nodo->padre->left == (tipo_dato)nodo) {
-	caca_log_debug("es ijo izq");
-		es_hijo_perra = verdadero;
-	}}
+	caca_log_debug("tonig padre %p nodo left %p nodo act %p", nodo->padre,
+			nodo->padre?nodo->padre->left:NULL, nodo);
+	if (nodo->padre) {
+		caca_log_debug("tiene padre");
+		if ((tipo_dato) nodo->padre->left == (tipo_dato) nodo) {
+			caca_log_debug("es ijo izq");
+			es_hijo_perra = verdadero;
+		}
+	}
 
 	return es_hijo_perra;
 }
@@ -1181,7 +1181,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
-		if (bitch_resu==0) {
+		if (bitch_resu == 0) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
 			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
@@ -1203,16 +1203,16 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_anterior(
 				nodo_sig = nodo_sig->right;
 			}
 		} else {
-			avl_tree_node_t *last_of_us=nodo_sig;
+			avl_tree_node_t *last_of_us = nodo_sig;
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
 						(tipo_dato)nodo_sig->indice_en_arreglo, bitch_resu);
 
-				if (bitch_resu==0 && !avl_tree_es_hijo_perra(last_of_us)) {
+				if (bitch_resu == 0 && !avl_tree_es_hijo_perra(last_of_us)) {
 					break;
 				}
-				last_of_us=nodo_sig;
+				last_of_us = nodo_sig;
 				nodo_sig = nodo_sig->padre;
 			}
 		}
@@ -1245,7 +1245,7 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 		bool hay_izq = falso;
 		num_marcado = nodo_sig->indice_en_arreglo;
 		caca_comun_mapa_bitch_checa(mapa_recorridos, num_marcado, bitch_resu);
-		if (bitch_resu==0) {
+		if (bitch_resu == 0) {
 			caca_comun_mapa_bitch_asigna(mapa_recorridos, num_marcado);
 			numeros_marcados[num_numeros_marcados] = num_marcado;
 			if (num_numeros_marcados == brinca_pa_tras) {
@@ -1267,17 +1267,16 @@ static inline avl_tree_node_t* avl_tree_nodo_posicion_siguiente(
 				nodo_sig = nodo_sig->left;
 			}
 		} else {
-			avl_tree_node_t *last_of_us=nodo_sig;
+			avl_tree_node_t *last_of_us = nodo_sig;
 			nodo_sig = nodo_sig->padre;
 			while (nodo_sig) {
 				caca_comun_mapa_bitch_checa(mapa_recorridos,
-						(tipo_dato)nodo_sig->indice_en_arreglo,
-						bitch_resu);
+						(tipo_dato)nodo_sig->indice_en_arreglo, bitch_resu);
 
-				if (bitch_resu==0 && avl_tree_es_hijo_perra(last_of_us)) {
+				if (bitch_resu == 0 && avl_tree_es_hijo_perra(last_of_us)) {
 					break;
 				}
-				last_of_us=nodo_sig;
+				last_of_us = nodo_sig;
 				nodo_sig = nodo_sig->padre;
 			}
 		}
@@ -1801,11 +1800,11 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			}
 		}
 	} else {
-		if (arbolin->nodos_realmente_en_arbol > 1
+		if (arbolin->nodos_realmente_en_arbol > 0
 				&& (avl_tree_find(arbolin, numerin_largo,
 						AVL_TREE_VALOR_INVALIDO))) {
 			avl_tree_node_t nodo_caca = { 0 };
-			tipo_dato pasajero_oscuro_a_borrar=AVL_TREE_VALOR_INVALIDO;
+			tipo_dato pasajero_oscuro_a_borrar = AVL_TREE_VALOR_INVALIDO;
 			if (!ope_par && !ope_izq) {
 				mover_mierdia = verdadero;
 				mover_izq = verdadero;
@@ -1814,59 +1813,63 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 				mover_mierdia = verdadero;
 				mover_izq = falso;
 			}
-			if(numerin_largo==nodo_verga->llave)
-			{
+			if (numerin_largo == nodo_verga->llave) {
 				pasajero_oscuro_a_borrar = nodo_verga->pasajero_oscuro;
 				mover_mierdia = verdadero;
-				if(ope_par)
-				{
+				if (ope_par) {
 					mover_izq = falso;
-				}
-				else
-				{
+				} else {
 					mover_izq = verdadero;
 				}
 			}
-			if (mover_mierdia) {
-				if (mover_izq) {
-					caca_log_debug("moviendo medi ano a la izq");
-					nodo = avl_tree_nodo_posicion_anterior(arbolin, nodo_verga,
-							1);
+			if ((num_cacas - 1)) {
+				if (mover_mierdia) {
+					if (mover_izq) {
+						caca_log_debug("moviendo medi ano a la izq");
+						nodo = avl_tree_nodo_posicion_anterior(arbolin,
+								nodo_verga, 1);
+					} else {
+						caca_log_debug("moviendo medi ano a la der");
+						nodo = avl_tree_nodo_posicion_siguiente(arbolin,
+								nodo_verga, 1);
+					}
+					caca_log_debug("nodo verga anterior %d %u, nuevo %d %u",
+							nodo_verga->llave, nodo_verga->pasajero_oscuro,
+							nodo->llave, nodo->pasajero_oscuro);
 				} else {
-					caca_log_debug("moviendo medi ano a la der");
-					nodo = avl_tree_nodo_posicion_siguiente(arbolin, nodo_verga,
-							1);
+					nodo = nodo_verga;
 				}
-				caca_log_debug("nodo verga anterior %d %u, nuevo %d %u",
-						nodo_verga->llave, nodo_verga->pasajero_oscuro,
-						nodo->llave, nodo->pasajero_oscuro);
-			} else {
-				nodo = nodo_verga;
+				nodo_caca = *nodo;
 			}
-			nodo_caca = *nodo;
 			avl_tree_borrar(arbolin, numerin_largo, pasajero_oscuro_a_borrar);
 #ifdef CACA_COMUN_VALIDA
 			avl_tree_validar_alv(arbolin);
 			memset(buffer, '\0', CACA_COMUN_TAM_MAX_LINEA * 1000);
 #endif
-			if ((num_cacas - 1) == 1) {
+			switch (num_cacas - 1) {
+			case 0:
+				nodo_verga = NULL;
+				break;
+			case 1:
 				nodo_verga = arbolin->root;
-			} else {
-				if ((num_cacas - 1) == 2) {
-					if (arbolin->root->right) {
-						nodo_verga = arbolin->root->right;
-						;
-					} else {
-						nodo_verga = arbolin->root;
-					}
+				break;
+			case 2:
+				if (arbolin->root->right) {
+					nodo_verga = arbolin->root->right;
+					;
 				} else {
-					nodo_verga = avl_tree_find(arbolin, nodo_caca.llave,
-							nodo_caca.pasajero_oscuro);
+					nodo_verga = arbolin->root;
 				}
+				break;
+			default:
+				nodo_verga = avl_tree_find(arbolin, nodo_caca.llave,
+						nodo_caca.pasajero_oscuro);
+				break;
+
 			}
 
 			caca_log_debug("despues de borrar el nodo verga %u",
-					nodo_verga->llave);
+					nodo_verga?nodo_verga->llave:AVL_TREE_VALOR_INVALIDO);
 			se_hizo_algo = verdadero;
 			num_cacas--;
 		}
@@ -1875,7 +1878,7 @@ static inline tipo_dato media_mierda_core(avl_tree_t *arbolin, int numerin,
 			se_hizo_algo?"si":"nel", num_cacas);
 	assert_timeout(arbolin->nodos_realmente_en_arbol == num_cacas);
 
-	if (se_hizo_algo) {
+	if (se_hizo_algo && nodo_verga) {
 		avl_tree_node_t *nodo_par = NULL;
 		if (ope_par) {
 			caca_log_debug("obteniendo el de la izq d %d %u", nodo_verga->llave,
@@ -1938,79 +1941,66 @@ void media_mierda_main() {
 		resul_bueno /= 2;
 
 #ifdef CACA_COMUN_VALIDA
-		bool izo=falso;
-		struct node* actual=NULL;
-		natural tam_caca=length();
-		caca_log_debug("tam inicial debug %d la ope %c", tam_caca,ope);
-		if(ope=='a')
-		{
+		bool izo = falso;
+		struct node* actual = NULL;
+		natural tam_caca = length();
+		caca_log_debug("tam inicial debug %d la ope %c", tam_caca, ope);
+		if (ope == 'a') {
 			caca_log_debug("insertando debug %d", num_actual);
-			insertFirst(num_actual,i);
-			izo=verdadero;
-		}
-		else
-		{
-			if(head && head->next && find(num_actual))
-			{
+			insertFirst(num_actual, i);
+			izo = verdadero;
+		} else {
+			if (head && find(num_actual)) {
 				caca_log_debug("borrando debug %d", num_actual);
 				delete(num_actual);
-				izo=verdadero;
+				izo = verdadero;
 			}
 		}
 		sort();
 //	printList();
-		tam_caca=length();
+		tam_caca = length();
 		caca_log_debug("tam debug despues %d", tam_caca);
 		assert_timeout(arbolin->nodos_realmente_en_arbol == tam_caca);
 
-		natural mitad_caca=tam_caca>>1;
-		natural conta_caca=0;
-		int mediano=0;
-		int mediano_par=0;
-		tipo_dato puta=0;
+		natural mitad_caca = tam_caca >> 1;
+		natural conta_caca = 0;
+		int mediano = 0;
+		int mediano_par = 0;
+		tipo_dato puta = 0;
 
-		if(izo)
-		{
-			if(tam_caca==1)
-			{
-				puta=(tipo_dato)head->key *2;
+		if (izo && head) {
+			if (tam_caca == 1) {
+				puta = (tipo_dato) head->key * 2;
 				caca_log_debug("una sola mierda %lld", puta);
-			}
-			else
-			{
+			} else {
 				actual = head;
-				while(conta_caca<mitad_caca && actual)
-				{
-					actual=actual->next;
+				while (conta_caca < mitad_caca && actual) {
+					actual = actual->next;
 					conta_caca++;
 				}
-				mediano=actual->key;
-				caca_log_debug("el medi ano %d (%u) el tam caca %u ", mediano, mitad_caca-1,tam_caca);
-				if(!(tam_caca%2))
-				{
+				mediano = actual->key;
+				caca_log_debug("el medi ano %d (%u) el tam caca %u ", mediano,
+						mitad_caca-1, tam_caca);
+				if (!(tam_caca % 2)) {
 					actual = head;
-					conta_caca=0;
-					while(conta_caca<mitad_caca-1 && actual)
-					{
-						actual=actual->next;
+					conta_caca = 0;
+					while (conta_caca < mitad_caca - 1 && actual) {
+						actual = actual->next;
 						conta_caca++;
 					}
-					mediano_par=actual->key;
-					caca_log_debug("el medi ano par  %d (%u)", mediano_par, mitad_caca-2);
-					puta=(tipo_dato)mediano+(tipo_dato)mediano_par;
-				}
-				else
-				{
-					puta=(tipo_dato)mediano*2;
+					mediano_par = actual->key;
+					caca_log_debug("el medi ano par  %d (%u)", mediano_par,
+							mitad_caca-2);
+					puta = (tipo_dato) mediano + (tipo_dato) mediano_par;
+				} else {
+					puta = (tipo_dato) mediano * 2;
 				}
 			}
-		}
-		else
-		{
-			puta=MEDIA_MIERDA_VALOR_INVALIDO;
+		} else {
+			puta = MEDIA_MIERDA_VALOR_INVALIDO;
 		}
 //	sleep(2);
-		assert_timeout(puta==resul);
+		assert_timeout(puta == resul);
 #endif
 
 		if (resul != MEDIA_MIERDA_VALOR_INVALIDO) {
